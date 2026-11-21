@@ -16,8 +16,8 @@
   ],
   "docs": {
     "documentation_url": "https://vikunja.io/",
-    "bug_url": "https://github.com/geniusdynamics/dev",
-    "code_url": "https://github.com/geniusdynamics/ns8-vikunja"
+    "bug_url": "https://github.com/amulyawan/ns8-vikunja/issues",
+    "code_url": "https://github.com/amulyawan/ns8-vikunja"
   },
-  "source": "ghcr.io/geniusdynamics/vikunja"
+  "source": "ghcr.io/amulyawan/vikunja"
 }

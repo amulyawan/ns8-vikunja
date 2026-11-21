@@ -11,19 +11,19 @@ After=vikunja.service postgresql-app.service
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
 EnvironmentFile=%S/state/environment
-EnvironmentFile=-%S/state/smarthost.env
 WorkingDirectory=%S/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p config
 ExecStartPre=/bin/rm -f %t/vikunja-app.pid %t/vikunja-app.ctr-id
-ExecStartPre=-runagent discover-smarthost
+ExecStartPre=runagent discover-smarthost
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/vikunja-app.pid \
     --cidfile %t/vikunja-app.ctr-id --cgroups=no-conmon \
     --pod-id-file %t/vikunja.pod-id --replace -d --name  vikunja-app \
-    --volume vikunja-app:/app/vikunja/files/:Z \
+    --volume vikunja-app:/app/vikunja/files/:Z,U \
     --env-file=%S/state/vikunja-db.env \
     --env-file=%S/state/vikunja.env \
+    --env-file=%S/state/smarthost.env \
     ${VIKUNJA_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/vikunja-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP vikunja-app

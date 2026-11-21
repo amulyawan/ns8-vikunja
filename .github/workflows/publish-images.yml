@@ -1,26 +1,69 @@
-name: "Publish images"
-
+name: Publish images
 on:
-  push:
+  # Run explicitly after owner authorization. Source push does not publish.
   workflow_dispatch:
-
 permissions:
+  contents: read
   packages: write
-  actions: read
-  contents: write
-  security-events: write
-
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  publish-images:
-    if: github.run_number > 1
-    uses: NethServer/ns8-github-actions/.github/workflows/publish-branch.yml@v1
-  module:
-    needs: publish-images
-    uses: NethServer/ns8-github-actions/.github/workflows/module-info.yml@v1
-  trivy:
-    needs: module
-
-    if: ${{ needs.module.outputs.release == 'stable' || needs.module.outputs.release == 'latest' || github.event_name == 'workflow_dispatch' }}
-    uses: NethServer/ns8-github-actions/.github/workflows/scan-with-trivy.yml@v1
-    with:
-      images: ${{ needs.module.outputs.images }}
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7, MIT
+      - name: Validate source
+        run: python3 tools/validate.py
+      - name: Prepare build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y buildah
+          buildah version
+      - name: Build NS8 candidate
+        id: build
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          export REPOBASE="ghcr.io/${OWNER,,}"
+          export IMAGETAG="${REF_NAME//\//-}"
+          [[ "$IMAGETAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]
+          bash build-images.sh
+          echo "tag=$IMAGETAG" >> "$GITHUB_OUTPUT"
+          mkdir -p .local
+          buildah push "$REPOBASE/vikunja" "docker-archive:.local/module.tar:$REPOBASE/vikunja:$IMAGETAG"
+      - name: Scan module archive
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0, Apache-2.0
+        with:
+          input: .local/module.tar
+          version: v0.70.0
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Scan Vikunja runtime
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: docker.io/vikunja/vikunja:2.8.0
+          version: v0.70.0
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Scan PostgreSQL runtime
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: docker.io/postgres:15.20-alpine3.24
+          version: v0.70.0
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Publish scanned candidate
+        env:
+          OWNER: ${{ github.repository_owner }}
+          ACTOR: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_TAG: ${{ steps.build.outputs.tag }}
+        run: |
+          trap 'buildah logout ghcr.io' EXIT
+          printf '%s' "$REGISTRY_TOKEN" | buildah login --username "$ACTOR" --password-stdin ghcr.io
+          image="ghcr.io/${OWNER,,}/vikunja"
+          buildah push --digestfile .local/module.digest "$image" "docker://$image:$IMAGE_TAG"
+          printf 'Candidate: `%s:%s`\n\nDigest: `%s`\n' "$image" "$IMAGE_TAG" "$(cat .local/module.digest)" >> "$GITHUB_STEP_SUMMARY"

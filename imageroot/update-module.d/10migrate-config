@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Preserve the existing signing secret when upgrading the module to Vikunja 2."""
+import os
+import shutil
+import tempfile
+from pathlib import Path
+
+import agent
+
+path = Path("vikunja-db.env")
+if path.exists():
+    values = agent.read_envfile(str(path))
+    updated = dict(values)
+    legacy_secret = updated.pop("VIKUNJA_SERVICE_JWTSECRET", None)
+    if legacy_secret:
+        if not updated.get("VIKUNJA_SERVICE_SECRET"):
+            updated["VIKUNJA_SERVICE_SECRET"] = legacy_secret
+    if updated.get("VIKUNJA_DATABASE_HOST") == "postgresql-app":
+        updated["VIKUNJA_DATABASE_HOST"] = "127.0.0.1:5432"
+    if updated != values:
+        # Keep a private one-time recovery copy before modifying unique state.
+        backup = Path("vikunja-db.env.pre-2.8")
+        if not backup.exists():
+            temporary = None
+            try:
+                with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as target:
+                    temporary = Path(target.name)
+                    with path.open("rb") as source:
+                        shutil.copyfileobj(source, target)
+                    target.flush()
+                    os.fsync(target.fileno())
+                os.replace(temporary, backup)
+            finally:
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
+        agent.write_envfile(str(path), updated)
+        os.chmod(path, 0o600)

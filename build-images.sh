@@ -6,19 +6,19 @@
 #
 
 # Terminate on error
-set -e
+set -euo pipefail
 
 # Prepare variables for later use
 images=()
 # The image will be pushed to GitHub container registry
-repobase="${REPOBASE:-ghcr.io/geniusdynamics}"
+repobase="${REPOBASE:-ghcr.io/amulyawan}"
 # Configure the image name
 reponame="vikunja"
 # Node.js 25+ no longer ships Corepack, install it from npm
 # renovate: datasource=npm packageName=corepack
 corepack_version=0.36.0
 # renovate: datasource=docker packageName=docker.io/vikunja/vikunja
-vikunja_version=1.1.0
+vikunja_version=2.8.0
 # Create a new empty container image
 container=$(buildah from scratch)
 
@@ -34,7 +34,7 @@ buildah run \
 	--workingdir=/usr/src/ui \
 	--env="NODE_OPTIONS=--openssl-legacy-provider" \
 	nodebuilder-vikunja \
-	sh -c "yarn install && yarn build"
+	sh -c "yarn install --immutable && yarn build"
 
 # Add imageroot directory to the container image
 buildah add "${container}" imageroot /imageroot
@@ -72,7 +72,7 @@ images+=("${repobase}/${reponame}")
 #
 # Setup CI when pushing to Github.
 # Warning! docker::// protocol expects lowercase letters (,,)
-if [[ -n "${CI}" ]]; then
+if [[ -n "${CI:-}" ]]; then
 	# Set output value for Github Actions
 	printf "images=%s\n" "${images[*],,}" >>"${GITHUB_OUTPUT}"
 else

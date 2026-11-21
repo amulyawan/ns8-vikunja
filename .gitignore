@@ -102,3 +102,13 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Owner-local records, credentials, runtime state, and validation output
+.local/
+.env.*
+*.env
+*.env.*
+*.secret
+*.pg_dump
+*.db
+__pycache__/
