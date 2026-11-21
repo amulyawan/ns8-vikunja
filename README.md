@@ -6,8 +6,9 @@ Fresh installs target the latest stable database, verified with a disposable app
 Upstream attribution
 and GPL license are retained; Vikunja itself is AGPL licensed.
 
-**Development candidate, not yet accepted for production.** Source preparation is
-local. The proposed owner repository and GHCR image require authorized publication.
+**Development candidate, not yet accepted for production.** Public development
+source is in `amulyawan/ns8-vikunja`. Authorized owner-only publication runs from
+the private `amulyawan/ns8-vikunja-build` repository, with explicit privacy gates.
 
 - [Panduan lengkap bahasa Indonesia: fork, build, staging, upgrade, backup dan rollback](docs/PANDUAN-NS8-ID.md)
 - [Validation gates and untested items](docs/VALIDATION.md)
