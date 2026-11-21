@@ -23,7 +23,7 @@
     "source": "ghcr.io/amulyawan/ns8-vikunja-build/vikunja",
     "id": "vikunja",
     "upstream_name": "Vikunja 2.8.0 / PostgreSQL 19.0",
-    "logo": "vikunja/logo.png",
+    "logo": "logo.png",
     "screenshots": [],
     "versions": [
       {

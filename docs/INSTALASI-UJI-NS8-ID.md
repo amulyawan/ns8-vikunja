@@ -28,13 +28,18 @@ Dokumentasi lokal privat memuat **nilai token asli pada bagian token dalam
 step-by-step instalasi**, account, scope, masa berlaku, lokasi auth dan prosedur
 rotasi. Lokasi sebenarnya hanya dibagikan kepada pemilik melalui chat/laporan lokal.
 
-Pada NS8, auth pengelola disimpan di `/root/.config/containers/auth.json` dengan
-mode `0600`. Auth dicakupkan pada `ghcr.io/amulyawan/ns8-vikunja-build`.
-Agent aplikasi rootless memerlukan salinan auth tersendiri pada
-`~/.config/containers/auth.json`, dimiliki user agent, mode `0600`.
+Pada NS8 3.25.1, pengelola dan agent memakai `REGISTRY_AUTH_FILE` yang menunjuk ke
+`/etc/nethserver/registry.json`. Tambahkan hanya namespace
+`ghcr.io/amulyawan/ns8-vikunja-build` sambil mempertahankan entry registry lainnya
+dan mode bawaan NS8. File ini adalah konfigurasi registry tingkat node yang
+digunakan agent NS8. Backup sebelumnya harus disimpan root-only.
+
+Salinan `/root/.config/containers/auth.json` mode `0600` dapat dipakai untuk
+perintah Podman eksplisit, tetapi login di situ saja tidak menyediakan auth bagi
+lifecycle aplikasi NS8. Begitu juga file auth pribadi agent tidak dipakai jika
+`REGISTRY_AUTH_FILE` menunjuk ke konfigurasi platform. Periksa environment aktual.
 Auth di `/run/user/...` saja tidak cukup untuk pembaruan setelah reboot.
-Jangan menyalin seluruh kredensial pengelola kepada agent; gunakan hanya namespace
-yang diperlukan. Jangan menaruh token pada command line atau history shell.
+Jangan menaruh token pada command line atau history shell.
 
 Uji pull image sebagai pengelola dan sebagai agent aplikasi. Token tidak bisa
 digunakan untuk push, mengubah repository source, atau menghapus package.
@@ -70,8 +75,12 @@ Refresh repository, lalu pastikan aplikasi berasal dari namespace pemilik.
 
 Gunakan Software Center untuk memilih Vikunja dari repository pemilik, atau
 API cluster `add-module` dengan image `vikunja` dan node ID yang sudah diperiksa.
-Sediakan auth agent untuk pull runtime database privat sebelum create-module
+Sediakan auth platform untuk pull runtime database privat sebelum create-module
 menjalankan langkah download. Catat module_id aktual dari hasil API.
+
+Logo katalog memakai `logo: "logo.png"`; NS8 sendiri menambahkan direktori ID
+aplikasi. Menulis `vikunja/logo.png` akan menggandakan direktori dan membuat
+gambar gagal dimuat dengan fallback teks “undefined logo”.
 
 Konfigurasikan hostname uji yang tidak dipakai aplikasi lain melalui panel
 Vikunja. Gunakan sertifikat tepercaya untuk pengujian browser. Backend aplikasi

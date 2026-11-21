@@ -20,7 +20,7 @@ assert "vikunja-postgres:19.0-ns8.1" in labels["org.nethserver.images"]
 assert "docker.io/vikunja/vikunja:2.8.0" in labels["org.nethserver.images"]
 metadata = json.loads((root / "ui/public/metadata.json").read_text(encoding="utf-8"))
 metadata.update(id="vikunja", name="Vikunja (amulyawan)",
-    upstream_name="Vikunja 2.8.0 / PostgreSQL 19.0", logo="vikunja/logo.png", screenshots=[])
+    upstream_name="Vikunja 2.8.0 / PostgreSQL 19.0", logo="logo.png", screenshots=[])
 metadata["docs"]["documentation_url"] = "https://github.com/amulyawan/ns8-vikunja/blob/vikunja-2.8.0/docs/INSTALASI-UJI-NS8-ID.md"
 metadata["versions"] = [{"tag": args.version, "testing": "-" in args.version,
                          "labels": {k: v for k, v in labels.items() if k.startswith("org.nethserver.")}}]
