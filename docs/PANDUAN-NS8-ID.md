@@ -135,9 +135,12 @@ Sesudah fork/push disetujui:
    yang gagal akan menghalangi publikasi; perbaiki penyebabnya. Periksa detail error,
    jangan menganggap workflow hijau bila ada job yang dilewati.
 5. Catat SHA commit, URL run, tag image, digest paket, dan versi aplikasi.
-6. Buka Packages akun/repository → paket **vikunja**. Tentukan akses package
-   yang disetujui. Image publik memudahkan pull NS8; package privat memerlukan
-   autentikasi registry di NS8 yang harus direncanakan terpisah.
+6. Sesuai keputusan pemilik 22 November 2026, image **harus privat di GHCR**.
+   Fork source tetap publik. Workflow memeriksa visibilitas package sebelum
+   publikasi dan sesudah push; package publik yang sudah ada akan ditolak.
+   Package baru dibuat privat secara default oleh GitHub. Jangan mengubahnya
+   menjadi publik atau membagikan akses kepada pihak lain tanpa persetujuan.
+   NS8 memerlukan autentikasi registry untuk menarik image privat.
 7. Pengujian NS8 dilakukan di staging mengikuti bagian 8–10. Workflow reusable
    upstream tidak digunakan dalam kandidat ini karena repository workflow belum
    menyediakan lisensi yang dapat diverifikasi. Workflow publikasi ditulis
@@ -212,6 +215,13 @@ Periksa distro dan versi core NS8, Traefik, DNS, sertifikat, node ID, disk,
 dan backend backup. Gunakan distro yang didukung rilis NS8 aktual.
 Untuk Ubuntu periksa firewall yang aktif; untuk Rocky periksa firewalld dan
 SELinux. Jangan membuka PostgreSQL ke jaringan atau menonaktifkan SELinux.
+
+Karena image kandidat privat, siapkan kredensial GitHub Packages **read:packages**
+untuk akun yang berhak. Login pada konteks Podman yang digunakan NS8 untuk
+menarik paket modul, dengan penyimpanan autentikasi persisten yang didukung NS8.
+Jangan menaruh token dalam command line, panduan, repository, atau log. Kesiapan
+autentikasi/pull harus diuji pada node staging; detail lokasi authfile tergantung
+versi NS8 dan belum diverifikasi pada instance pemilik.
 
 Pada shell root **node staging NS8**, ganti `1` dengan node ID yang benar:
 

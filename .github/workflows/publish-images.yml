@@ -55,6 +55,11 @@ jobs:
           version: v0.70.0
           severity: HIGH,CRITICAL
           exit-code: '1'
+      - name: Require private package before publication
+        env:
+          OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/registry_visibility.py "$OWNER" --allow-absent
       - name: Publish scanned candidate
         env:
           OWNER: ${{ github.repository_owner }}
@@ -67,3 +72,8 @@ jobs:
           image="ghcr.io/${OWNER,,}/vikunja"
           buildah push --digestfile .local/module.digest "$image" "docker://$image:$IMAGE_TAG"
           printf 'Candidate: `%s:%s`\n\nDigest: `%s`\n' "$image" "$IMAGE_TAG" "$(cat .local/module.digest)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify published package remains private
+        env:
+          OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/registry_visibility.py "$OWNER"
