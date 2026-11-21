@@ -13,14 +13,15 @@ parser.add_argument("labels_file", type=Path)
 args = parser.parse_args()
 if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?", args.version):
     raise SystemExit("NS8 requires a semantic version tag")
-labels = json.loads(args.labels_file.read_text())
+labels = json.loads(args.labels_file.read_text(encoding="utf-8"))
 assert labels["org.nethserver.rootfull"] == "0"
 assert labels["org.nethserver.min-core"] == "3.0.0"
 assert "vikunja-postgres:19.0-ns8.1" in labels["org.nethserver.images"]
 assert "docker.io/vikunja/vikunja:2.8.0" in labels["org.nethserver.images"]
-metadata = json.loads((root / "ui/public/metadata.json").read_text())
+metadata = json.loads((root / "ui/public/metadata.json").read_text(encoding="utf-8"))
 metadata.update(id="vikunja", name="Vikunja (amulyawan)",
     upstream_name="Vikunja 2.8.0 / PostgreSQL 19.0", logo="vikunja/logo.png", screenshots=[])
+metadata["docs"]["documentation_url"] = "https://github.com/amulyawan/ns8-vikunja/blob/vikunja-2.8.0/docs/INSTALASI-UJI-NS8-ID.md"
 metadata["versions"] = [{"tag": args.version, "testing": "-" in args.version,
                          "labels": {k: v for k, v in labels.items() if k.startswith("org.nethserver.")}}]
 destination = root / "catalog"

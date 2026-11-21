@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Vikunja (amulyawan)",
+    "description": {
+      "en": "Plan your projects with the elegance of a sloth on a sunny day.",
+      "it": "Vikunja \u00e8 un'applicazione self-hosted di attivit\u00e0 e project management con liste, kanban, promemoria e condivisione."
+    },
+    "categories": [
+      "collaboration",
+      "office"
+    ],
+    "authors": [
+      {
+        "name": "Kemboi Elvis",
+        "email": "kemboielvis@genius.ke"
+      }
+    ],
+    "docs": {
+      "documentation_url": "https://github.com/amulyawan/ns8-vikunja/blob/vikunja-2.8.0/docs/INSTALASI-UJI-NS8-ID.md",
+      "bug_url": "https://github.com/amulyawan/ns8-vikunja/issues",
+      "code_url": "https://github.com/amulyawan/ns8-vikunja"
+    },
+    "source": "ghcr.io/amulyawan/ns8-vikunja-build/vikunja",
+    "id": "vikunja",
+    "upstream_name": "Vikunja 2.8.0 / PostgreSQL 19.0",
+    "logo": "vikunja/logo.png",
+    "screenshots": [],
+    "versions": [
+      {
+        "tag": "2.8.0-rc.1",
+        "testing": true,
+        "labels": {
+          "org.nethserver.authorizations": "traefik@node:routeadm",
+          "org.nethserver.images": "ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1 docker.io/vikunja/vikunja:2.8.0",
+          "org.nethserver.min-core": "3.0.0",
+          "org.nethserver.rootfull": "0",
+          "org.nethserver.tcp-ports-demand": "1"
+        }
+      }
+    ]
+  }
+]
