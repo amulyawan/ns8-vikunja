@@ -19,7 +19,7 @@ jobs:
       - name: Prepare build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y buildah
+          sudo apt-get install -y buildah podman
           buildah version
       - name: Build NS8 candidate
         id: build
@@ -34,6 +34,26 @@ jobs:
           echo "tag=$IMAGETAG" >> "$GITHUB_OUTPUT"
           mkdir -p .local
           buildah push "$REPOBASE/vikunja" "docker-archive:.local/module.tar:$REPOBASE/vikunja:$IMAGETAG"
+          buildah push "$REPOBASE/vikunja-postgres:15.20-ns8.1" "docker-archive:.local/postgres.tar:$REPOBASE/vikunja-postgres:15.20-ns8.1"
+      - name: Smoke test patched PostgreSQL
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          trap 'podman rm --force --volumes pg-candidate >/dev/null 2>&1 || true' EXIT
+          export POSTGRES_PASSWORD="$(openssl rand -hex 32)"
+          podman run --detach --name pg-candidate --env POSTGRES_PASSWORD "ghcr.io/${OWNER,,}/vikunja-postgres:15.20-ns8.1"
+          for i in $(seq 1 40); do
+            if podman exec pg-candidate pg_isready -U postgres; then break; fi
+            sleep 1
+          done
+          podman exec pg-candidate psql -U postgres -v ON_ERROR_STOP=1 -c 'CREATE TABLE candidate_test (id integer); INSERT INTO candidate_test VALUES (1);'
+          podman restart pg-candidate
+          for i in $(seq 1 40); do
+            if podman exec pg-candidate pg_isready -U postgres; then break; fi
+            sleep 1
+          done
+          test "$(podman exec pg-candidate psql -U postgres -Atc 'SELECT count(*) FROM candidate_test')" = 1
+          podman exec pg-candidate pg_dump -U postgres --format=c postgres > .local/postgres-smoke.dump
       - name: Scan module archive
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0, Apache-2.0
         with:
@@ -51,7 +71,7 @@ jobs:
       - name: Scan PostgreSQL runtime
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
-          image-ref: docker.io/postgres:15.20-alpine3.24
+          input: .local/postgres.tar
           version: v0.70.0
           severity: HIGH,CRITICAL
           exit-code: '1'
@@ -59,7 +79,9 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 tools/registry_visibility.py "$OWNER" --allow-absent
+        run: |
+          python3 tools/registry_visibility.py "$OWNER" --allow-absent
+          python3 tools/registry_visibility.py "$OWNER" --package vikunja-postgres --allow-absent
       - name: Publish scanned candidate
         env:
           OWNER: ${{ github.repository_owner }}
@@ -70,10 +92,15 @@ jobs:
           trap 'buildah logout ghcr.io' EXIT
           printf '%s' "$REGISTRY_TOKEN" | buildah login --username "$ACTOR" --password-stdin ghcr.io
           image="ghcr.io/${OWNER,,}/vikunja"
+          database="ghcr.io/${OWNER,,}/vikunja-postgres:15.20-ns8.1"
+          buildah push --digestfile .local/postgres.digest "$database" "docker://$database"
           buildah push --digestfile .local/module.digest "$image" "docker://$image:$IMAGE_TAG"
           printf 'Candidate: `%s:%s`\n\nDigest: `%s`\n' "$image" "$IMAGE_TAG" "$(cat .local/module.digest)" >> "$GITHUB_STEP_SUMMARY"
+          printf '\nDatabase: `%s`\n\nDigest: `%s`\n' "$database" "$(cat .local/postgres.digest)" >> "$GITHUB_STEP_SUMMARY"
       - name: Verify published package remains private
         env:
           OWNER: ${{ github.repository_owner }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 tools/registry_visibility.py "$OWNER"
+        run: |
+          python3 tools/registry_visibility.py "$OWNER"
+          python3 tools/registry_visibility.py "$OWNER" --package vikunja-postgres

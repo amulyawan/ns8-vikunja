@@ -1,7 +1,9 @@
 # ns8-vikunja — Vikunja 2.8.0 candidate
 
 NS8 integration derived from [geniusdynamics/ns8-vikunja](https://github.com/geniusdynamics/ns8-vikunja).
-It uses the official combined Vikunja image and PostgreSQL 15. Upstream attribution
+It uses the official combined Vikunja image and a patched PostgreSQL 15 runtime.
+The database derivative preserves PostgreSQL 15.20 and repairs vulnerable helper/base packages.
+Upstream attribution
 and GPL license are retained; Vikunja itself is AGPL licensed.
 
 **Development candidate, not yet accepted for production.** Source preparation is

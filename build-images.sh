@@ -19,6 +19,9 @@ reponame="vikunja"
 corepack_version=0.36.0
 # renovate: datasource=docker packageName=docker.io/vikunja/vikunja
 vikunja_version=2.8.0
+# Keep the database major unchanged; repair vulnerable upstream helper/base packages.
+postgres_image="${repobase}/vikunja-postgres:15.20-ns8.1"
+buildah bud --tag "${postgres_image}" --file containers/postgres/Containerfile containers/postgres
 # Create a new empty container image
 container=$(buildah from scratch)
 
@@ -51,7 +54,7 @@ buildah config --entrypoint=/ \
 	--label="org.nethserver.tcp-ports-demand=1" \
 	--label="org.nethserver.rootfull=0" \
     --label="org.nethserver.min-core=3.0.0" \
-	--label="org.nethserver.images=docker.io/postgres:15.20-alpine3.24 docker.io/vikunja/vikunja:$vikunja_version" \
+	--label="org.nethserver.images=${postgres_image} docker.io/vikunja/vikunja:$vikunja_version" \
 	"${container}"
 # Commit the image
 buildah commit "${container}" "${repobase}/${reponame}"
@@ -75,9 +78,11 @@ images+=("${repobase}/${reponame}")
 if [[ -n "${CI:-}" ]]; then
 	# Set output value for Github Actions
 	printf "images=%s\n" "${images[*],,}" >>"${GITHUB_OUTPUT}"
+	printf "postgres_image=%s\n" "${postgres_image,,}" >>"${GITHUB_OUTPUT}"
 else
 	# Just print info for manual push
 	printf "Publish the images with:\n\n"
 	for image in "${images[@],,}"; do printf "  buildah push %s docker://%s:%s\n" "${image}" "${image}" "${IMAGETAG:-latest}"; done
+	printf "  buildah push %s docker://%s\n" "${postgres_image}" "${postgres_image}"
 	printf "\n"
 fi

@@ -8,11 +8,13 @@ import urllib.error
 import urllib.request
 
 
-def check(owner, allow_absent=False):
+def check(owner, allow_absent=False, package="vikunja"):
     if not re.fullmatch(r"[A-Za-z0-9-]+", owner):
         raise ValueError("Invalid GitHub owner")
+    if package not in ("vikunja", "vikunja-postgres"):
+        raise ValueError("Unexpected candidate package")
     request = urllib.request.Request(
-        f"https://api.github.com/users/{owner}/packages/container/vikunja",
+        f"https://api.github.com/users/{owner}/packages/container/{package}",
         headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
                  "Accept": "application/vnd.github+json",
                  "X-GitHub-Api-Version": "2022-11-28"})
@@ -33,5 +35,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("owner")
     parser.add_argument("--allow-absent", action="store_true")
+    parser.add_argument("--package", default="vikunja")
     args = parser.parse_args()
-    check(args.owner, args.allow_absent)
+    check(args.owner, args.allow_absent, args.package)

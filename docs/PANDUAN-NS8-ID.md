@@ -112,6 +112,10 @@ Fork/push di atas belum dijalankan dalam pekerjaan persiapan ini.
    nilai JWT secret lama ke nama baru, mempertahankan password database dan
    host database kustom. Salinan pemulihan lokal dibuat sebelum perubahan.
 3. Host PostgreSQL bawaan memakai loopback pod. Major PostgreSQL tetap **15**.
+   Scan pertama menemukan kerentanan pada library/helper image resmi yang
+   diwarisi. `containers/postgres/Containerfile` mempertahankan PostgreSQL 15.20,
+   memperbarui paket Alpine, dan membangun ulang gosu 1.20 dengan Go 1.27.4.
+   Hasilnya adalah runtime privat `ghcr.io/amulyawan/vikunja-postgres:15.20-ns8.1`.
 4. Volume lampiran menggunakan `:Z,U` untuk SELinux dan UID container 1000.
    `:U` menyesuaikan kepemilikan isi volume; uji dengan lampiran lama di staging.
 5. Backup menyertakan konfigurasi database, secret, konfigurasi aplikasi, dump,
@@ -140,7 +144,8 @@ Sesudah fork/push disetujui:
    publikasi dan sesudah push; package publik yang sudah ada akan ditolak.
    Package baru dibuat privat secara default oleh GitHub. Jangan mengubahnya
    menjadi publik atau membagikan akses kepada pihak lain tanpa persetujuan.
-   NS8 memerlukan autentikasi registry untuk menarik image privat.
+   NS8 memerlukan autentikasi registry untuk menarik kedua image privat,
+   yaitu `vikunja` dan `vikunja-postgres`.
 7. Pengujian NS8 dilakukan di staging mengikuti bagian 8–10. Workflow reusable
    upstream tidak digunakan dalam kandidat ini karena repository workflow belum
    menyediakan lisensi yang dapat diverifikasi. Workflow publikasi ditulis
@@ -200,6 +205,7 @@ di command line atau di repository:
 
 ```bash
 buildah login ghcr.io
+buildah push ghcr.io/amulyawan/vikunja-postgres:15.20-ns8.1 docker://ghcr.io/amulyawan/vikunja-postgres:15.20-ns8.1
 buildah push ghcr.io/amulyawan/vikunja docker://ghcr.io/amulyawan/vikunja:vikunja-2.8.0
 buildah logout ghcr.io
 ```
@@ -222,6 +228,8 @@ menarik paket modul, dengan penyimpanan autentikasi persisten yang didukung NS8.
 Jangan menaruh token dalam command line, panduan, repository, atau log. Kesiapan
 autentikasi/pull harus diuji pada node staging; detail lokasi authfile tergantung
 versi NS8 dan belum diverifikasi pada instance pemilik.
+Uji pull image paket sebagai pengelola NS8 dan image database pada konteks agent
+aplikasi. Akses salah satu konteks saja belum membuktikan keduanya berhasil.
 
 Pada shell root **node staging NS8**, ganti `1` dengan node ID yang benar:
 
