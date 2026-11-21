@@ -8,8 +8,10 @@ Target: Vikunja 2.8.0 in an NS8 module. This is a development candidate.
 | --- | --- | --- |
 | Source checks | `python3 tools/validate.py` and clean diff | 17 tests cover module, PostgreSQL major guard and private-registry policies; see current CI result |
 | NS8 settings frontend | Immutable Yarn install and production build | Passed locally on Windows Node 24.17.0; inherited peer/deprecation/bundle-size warnings; Linux Node 26 build still pending |
-| Package build | Successful Buildah module build; image labels contain Vikunja 2.8.0 | First Linux runner build passed; patched database rebuild pending |
-| Container scans | Trivy output for module **and service images** | First run: module and Vikunja passed; inherited PostgreSQL failed; publication withheld; repair rerun pending |
+| Package build | Successful Buildah module build; image labels contain Vikunja 2.8.0 | Passed on private Linux runner, run 44959585748 |
+| Container scans | Trivy output for module **and service images** | Module, Vikunja and patched PostgreSQL 19 all passed HIGH/CRITICAL gate, run 44959585748 |
+| Private publication | Package API visibility after push | Both final packages verified private, run 44959585748 |
+| Application + PostgreSQL 19 | Synthetic user/project/task, restart, dump/restore | Passed in disposable Podman pod, run 44959585748 |
 | Fresh NS8 install | Configure, frontend, API v2 version, database health, restart | Pending staging NS8 |
 | MCP | Anonymous rejection plus authenticated initialize/tools/list with scoped token | Pending staging NS8 |
 | Application flows | Two synthetic users, projects, tasks, comments, sharing, attachment upload/download | Pending staging NS8 |
@@ -84,3 +86,19 @@ database dump/restore, frontend/API health and anonymous MCP rejection. Full NS8
 backup/restore, authenticated MCP and migration of an existing instance remain
 separate staging gates. See https://vikunja.io/docs/installing/ and
 https://www.postgresql.org/about/news/postgresql-19-released-3449/ .
+
+## Final candidate publication
+
+[Private run 44959585748](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44959585748)
+successfully built commit `1b0e402` with Vikunja 2.8.0 and PostgreSQL 19.0.
+All source checks, application persistence/dump-restore tests, three container
+scans and before/after package privacy gates passed. Scans fail on HIGH/CRITICAL;
+this is not a statement that all severities or host-kernel risks are absent.
+
+- Module: `ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0`
+- Database: `ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1`
+
+The first PostgreSQL 19 test had already passed initialization and application
+CRUD, then failed because it restarted the application before the database.
+The corrected test restarts PostgreSQL, waits for readiness, then restarts Vikunja.
+No NS8 host has been modified. NS8 staging acceptance is still required.

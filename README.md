@@ -30,9 +30,11 @@ On a Linux development host with Buildah/Podman:
 REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=vikunja-2.8.0 bash build-images.sh
 ```
 
-The `Publish images` GitHub workflow is manual. After owner authorization and a
-successful registry build, the candidate image is expected at
-`ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0`. Do not assume it already exists.
+The manual `Publish images` workflow completed successfully in private run
+44959585748. The owner-only candidate is published at
+`ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0` with the private
+database runtime `ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1`.
+Both packages passed the before/after privacy checks. NS8 acceptance is pending.
 
 ## Install on an approved NS8 staging node
 

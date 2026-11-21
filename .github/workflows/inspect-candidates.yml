@@ -1,0 +1,38 @@
+name: Inspect private candidate metadata
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-candidates.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  inspect:
+    if: github.event_name == 'workflow_dispatch' && github.event.repository.private
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read private visibility and immutable version digests
+        env:
+          OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request
+          def get(path):
+              request = urllib.request.Request('https://api.github.com'+path,
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                           'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+          for name, tag in [('vikunja','vikunja-2.8.0'),('vikunja-postgres','19.0-ns8.1')]:
+              package = 'ns8-vikunja-build/'+name
+              path = '/users/'+os.environ['OWNER']+'/packages/container/'+urllib.parse.quote(package, safe='')
+              metadata = get(path)
+              assert metadata['visibility'] == 'private'
+              versions = get(path+'/versions')
+              version = next(v for v in versions if tag in v['metadata']['container']['tags'])
+              print(json.dumps({'package':package,'visibility':metadata['visibility'],
+                                'digest':version['name'],'tag':tag}))
+          PY

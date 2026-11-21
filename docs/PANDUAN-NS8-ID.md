@@ -4,6 +4,12 @@ Tanggal pemeriksaan: **22 November 2026**. Status: **kandidat pengembangan**,
 belum lulus penerimaan NS8. Target akun GitHub: `amulyawan`.
 Repository dan image akun tersebut baru tersedia setelah fork/push/publish disetujui.
 
+**Hasil pekerjaan:** fork publik `amulyawan/ns8-vikunja` tersedia. Build dan
+publikasi final dijalankan dari repository privat `amulyawan/ns8-vikunja-build`.
+Run 44959585748 lulus dengan Vikunja 2.8.0 + PostgreSQL 19.0, termasuk uji data,
+restart, dump–restore, scan ketiga image dan verifikasi kedua package privat.
+Belum ada instalasi atau perubahan pada NS8 pemilik. Lihat `VALIDATION.md`.
+
 ## 1. Pilihan: fork modul yang ada
 
 Gunakan `geniusdynamics/ns8-vikunja` sebagai dasar. Jangan membuat aplikasi
