@@ -1,0 +1,40 @@
+name: Withdraw unintended public candidates
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  withdraw:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Withdraw only this task's new public image versions
+        env:
+          OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import datetime, json, os, urllib.request
+          owner = os.environ['OWNER']
+          def request(path, method='GET'):
+              req = urllib.request.Request('https://api.github.com'+path, method=method,
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                  'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return json.load(response) if response.status != 204 else None
+          for name, tag in [('vikunja','vikunja-2.8.0'),('vikunja-postgres','15.20-ns8.1')]:
+              path = f'/users/{owner}/packages/container/{name}'
+              package = request(path)
+              if package['visibility'] == 'private':
+                  print('Already private; retained', name)
+                  continue
+              assert package['visibility'] == 'public', 'Unexpected visibility'
+              created = datetime.datetime.fromisoformat(package['created_at'].replace('Z','+00:00'))
+              assert 0 <= (datetime.datetime.now(datetime.timezone.utc)-created).total_seconds() < 7200, 'Not a new task package'
+              versions = request(path+'/versions')
+              assert len(versions) == 1, 'Unexpected existing package history'
+              assert versions[0]['metadata']['container']['tags'] == [tag], 'Unexpected candidate tags'
+              request(path, 'DELETE')
+              print('Withdrawn newly created public candidate:', name)
+          PY
