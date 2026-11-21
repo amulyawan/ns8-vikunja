@@ -130,6 +130,10 @@ class ModuleContract(unittest.TestCase):
         restore = (ROOT / "imageroot/actions/restore-module/40restore_database").read_text()
         self.assertIn("postgres19-data:/var/lib/postgresql:Z", service)
         self.assertIn("postgres19-data:/var/lib/postgresql:Z", restore)
+        # NS8 creates this variable from the runtime image basename vikunja-postgres.
+        self.assertIn("${VIKUNJA_POSTGRES_IMAGE}", service)
+        self.assertIn("${VIKUNJA_POSTGRES_IMAGE}", restore)
+        self.assertNotIn("${POSTGRES_IMAGE}", service + restore)
 
     @unittest.skipUnless(os.name == "posix", "POSIX migration guard")
     def test_legacy_volume_requires_verified_migration_marker(self):

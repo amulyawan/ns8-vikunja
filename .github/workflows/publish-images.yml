@@ -6,6 +6,12 @@ on:
       - .github/workflows/publish-images.yml
   # Run explicitly after owner authorization. Source push does not publish.
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: NS8 module semantic version tag
+        required: true
+        default: 2.8.0-rc.1
+        type: string
 permissions:
   contents: read
   packages: write
@@ -39,9 +45,10 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
           REF_NAME: ${{ github.ref_name }}
+          IMAGE_TAG_REQUEST: ${{ inputs.image_tag }}
         run: |
           export REPOBASE="ghcr.io/${OWNER,,}/ns8-vikunja-build"
-          export IMAGETAG="${REF_NAME//\//-}"
+          export IMAGETAG="${IMAGE_TAG_REQUEST:-${REF_NAME//\//-}}"
           [[ "$IMAGETAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]
           bash build-images.sh
           echo "tag=$IMAGETAG" >> "$GITHUB_OUTPUT"
@@ -142,8 +149,9 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_TAG: ${{ steps.build.outputs.tag }}
         run: |
           status=0
-          python3 tools/registry_visibility.py "$OWNER" --withdraw-public || status=1
+          python3 tools/registry_visibility.py "$OWNER" --withdraw-public --tag "$IMAGE_TAG" || status=1
           python3 tools/registry_visibility.py "$OWNER" --package vikunja-postgres --withdraw-public || status=1
           exit "$status"

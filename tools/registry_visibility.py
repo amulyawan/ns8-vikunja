@@ -10,7 +10,7 @@ import urllib.request
 import urllib.parse
 
 
-def check(owner, allow_absent=False, package="vikunja", withdraw_public=False):
+def check(owner, allow_absent=False, package="vikunja", withdraw_public=False, expected_tag=None):
     if not re.fullmatch(r"[A-Za-z0-9-]+", owner):
         raise ValueError("Invalid GitHub owner")
     if package not in ("vikunja", "vikunja-postgres"):
@@ -40,7 +40,7 @@ def check(owner, allow_absent=False, package="vikunja", withdraw_public=False):
             versions_request = urllib.request.Request(request.full_url + "/versions", headers=dict(request.headers))
             with urllib.request.urlopen(versions_request, timeout=30) as response:
                 versions = json.load(response)
-            expected_tag = "vikunja-2.8.0" if package == "vikunja" else "19.0-ns8.1"
+            expected_tag = expected_tag or ("vikunja-2.8.0" if package == "vikunja" else "19.0-ns8.1")
             if len(versions) != 1 or versions[0]["metadata"]["container"]["tags"] != [expected_tag]:
                 raise RuntimeError("Refusing to withdraw unexpected package history")
             deletion = urllib.request.Request(request.full_url, method="DELETE", headers=dict(request.headers))
@@ -57,5 +57,6 @@ if __name__ == "__main__":
     parser.add_argument("--allow-absent", action="store_true")
     parser.add_argument("--package", default="vikunja")
     parser.add_argument("--withdraw-public", action="store_true")
+    parser.add_argument("--tag")
     args = parser.parse_args()
-    check(args.owner, args.allow_absent, args.package, args.withdraw_public)
+    check(args.owner, args.allow_absent, args.package, args.withdraw_public, args.tag)
