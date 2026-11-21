@@ -6,7 +6,7 @@ Target: Vikunja 2.8.0 in an NS8 module. This is a development candidate.
 
 | Gate | Required evidence | Status |
 | --- | --- | --- |
-| Source checks | `python3 tools/validate.py` and clean diff | Passed locally: 13 tests including private-registry fail-closed policy; Python, Bash, JSON parsing |
+| Source checks | `python3 tools/validate.py` and clean diff | 17 tests cover module, PostgreSQL major guard and private-registry policies; see current CI result |
 | NS8 settings frontend | Immutable Yarn install and production build | Passed locally on Windows Node 24.17.0; inherited peer/deprecation/bundle-size warnings; Linux Node 26 build still pending |
 | Package build | Successful Buildah module build; image labels contain Vikunja 2.8.0 | First Linux runner build passed; patched database rebuild pending |
 | Container scans | Trivy output for module **and service images** | First run: module and Vikunja passed; inherited PostgreSQL failed; publication withheld; repair rerun pending |
@@ -32,9 +32,11 @@ loopback-only process using synthetic SQLite data. The process was stopped.
 This is application-level diagnostic evidence; it does **not** validate the NS8
 container, PostgreSQL, rootless volume permissions, TLS or migration from 1.1.0.
 
-Runtime compatibility cannot be inferred from changing an image label. PostgreSQL
-stays on upstream's major version 15; do not combine a database major upgrade with
-this application change. Do not downgrade an already migrated database in place.
+Runtime compatibility cannot be inferred from changing an image label. The owner
+requested the latest stable database for fresh installs: PostgreSQL 19.0. The
+image uses its new parent volume path and a separate postgres19-data volume.
+An existing legacy postgres-data volume blocks direct upgrade until a separately
+verified logical migration has been completed. Never downgrade a migrated DB in place.
 
 ## First registry build and security repair
 
@@ -49,3 +51,36 @@ and rebuild unchanged gosu 1.20 from pinned source using Go 1.27.4. Publish this
 as the separate **private** `vikunja-postgres:15.20-ns8.1` runtime only after its
 scan and synthetic initialization/restart/dump smoke test pass. NS8 install,
 old-data migration and full backup/restore still require a staging node.
+
+## Privacy correction
+
+Run 44957983454 passed the rebuilt PostgreSQL smoke test and all three scans.
+Publication succeeded, but its final visibility check failed: both newly created
+packages were publicly pullable. This did not satisfy the owner's private-image
+requirement. The cause of that unexpected initial visibility was not established.
+
+[Withdrawal run 44958344679](https://github.com/amulyawan/ns8-vikunja/actions/runs/44958344679)
+deleted only those two newly created, single-version public candidates. Fresh
+anonymous registry requests then returned HTTP 403. No private server configs,
+owner data or credentials were included in the images; whether someone downloaded
+the public candidate during that interval is unknown.
+
+Replacement publication uses the private `amulyawan/ns8-vikunja-build` repository
+and a new `ghcr.io/amulyawan/ns8-vikunja-build/` namespace. A repository-private
+guard now runs before building, package visibility is checked before and after
+push, and an unintended newly created public candidate is withdrawn automatically.
+
+## Latest database decision
+
+PostgreSQL 19.0 was released on 2026-11-19. Vikunja's public installation docs
+list PostgreSQL support without a maximum server version, but their CI currently
+tests 18. Therefore 19 is a candidate combination requiring our own evidence,
+not a claim of upstream certification. The owner rejected retaining 15 merely
+because it was pinned by the original integration.
+
+The candidate CI now tests Vikunja 2.8.0 against PostgreSQL 19.0: automatic schema
+migrations, registration/login, project/task creation, restart persistence,
+database dump/restore, frontend/API health and anonymous MCP rejection. Full NS8
+backup/restore, authenticated MCP and migration of an existing instance remain
+separate staging gates. See https://vikunja.io/docs/installing/ and
+https://www.postgresql.org/about/news/postgresql-19-released-3449/ .

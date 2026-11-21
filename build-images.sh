@@ -11,7 +11,7 @@ set -euo pipefail
 # Prepare variables for later use
 images=()
 # The image will be pushed to GitHub container registry
-repobase="${REPOBASE:-ghcr.io/amulyawan}"
+repobase="${REPOBASE:-ghcr.io/amulyawan/ns8-vikunja-build}"
 # Configure the image name
 reponame="vikunja"
 # Node.js 25+ no longer ships Corepack, install it from npm
@@ -19,8 +19,8 @@ reponame="vikunja"
 corepack_version=0.36.0
 # renovate: datasource=docker packageName=docker.io/vikunja/vikunja
 vikunja_version=2.8.0
-# Keep the database major unchanged; repair vulnerable upstream helper/base packages.
-postgres_image="${repobase}/vikunja-postgres:15.20-ns8.1"
+# Latest stable database for fresh installs, with patched helper/base packages.
+postgres_image="${repobase}/vikunja-postgres:19.0-ns8.1"
 buildah bud --tag "${postgres_image}" --file containers/postgres/Containerfile containers/postgres
 # Create a new empty container image
 container=$(buildah from scratch)

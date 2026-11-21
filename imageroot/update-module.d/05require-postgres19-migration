@@ -1,0 +1,10 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+set -euo pipefail
+# Legacy modules use postgres-data. Never silently initialize an empty new DB.
+if podman volume exists postgres-data; then
+    if [[ ! -f postgres19-migration-complete ]] || [[ "$(cat postgres19-migration-complete)" != "19" ]]; then
+        echo 'Legacy PostgreSQL volume detected. Migrate and validate its dump into PostgreSQL 19 on staging before upgrading. See docs/PANDUAN-NS8-ID.md.' >&2
+        exit 1
+    fi
+fi

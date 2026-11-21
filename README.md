@@ -1,8 +1,8 @@
 # ns8-vikunja — Vikunja 2.8.0 candidate
 
 NS8 integration derived from [geniusdynamics/ns8-vikunja](https://github.com/geniusdynamics/ns8-vikunja).
-It uses the official combined Vikunja image and a patched PostgreSQL 15 runtime.
-The database derivative preserves PostgreSQL 15.20 and repairs vulnerable helper/base packages.
+It uses the official combined Vikunja 2.8.0 image and a patched PostgreSQL 19.0 runtime.
+Fresh installs target the latest stable database, verified with a disposable application stack.
 Upstream attribution
 and GPL license are retained; Vikunja itself is AGPL licensed.
 
@@ -26,19 +26,19 @@ python3 tools/validate.py
 On a Linux development host with Buildah/Podman:
 
 ```bash
-REPOBASE=ghcr.io/amulyawan IMAGETAG=vikunja-2.8.0 bash build-images.sh
+REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=vikunja-2.8.0 bash build-images.sh
 ```
 
 The `Publish images` GitHub workflow is manual. After owner authorization and a
 successful registry build, the candidate image is expected at
-`ghcr.io/amulyawan/vikunja:vikunja-2.8.0`. Do not assume it already exists.
+`ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0`. Do not assume it already exists.
 
 ## Install on an approved NS8 staging node
 
 Only after image publication, prerequisite checks and a verified rollback source:
 
 ```bash
-add-module ghcr.io/amulyawan/vikunja:vikunja-2.8.0 1
+add-module ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0 1
 ```
 
 Use the returned module ID, actual node ID, DNS and trusted TLS certificate.

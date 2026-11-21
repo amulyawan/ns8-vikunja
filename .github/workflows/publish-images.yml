@@ -13,6 +13,14 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
+      - name: Require private build repository
+        env:
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          if [[ "$REPOSITORY_PRIVATE" != "true" ]]; then
+            echo 'Publication requires the private ns8-vikunja-build repository.' >&2
+            exit 1
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7, MIT
       - name: Validate source
         run: python3 tools/validate.py
@@ -27,33 +35,46 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           REF_NAME: ${{ github.ref_name }}
         run: |
-          export REPOBASE="ghcr.io/${OWNER,,}"
+          export REPOBASE="ghcr.io/${OWNER,,}/ns8-vikunja-build"
           export IMAGETAG="${REF_NAME//\//-}"
           [[ "$IMAGETAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]
           bash build-images.sh
           echo "tag=$IMAGETAG" >> "$GITHUB_OUTPUT"
           mkdir -p .local
           buildah push "$REPOBASE/vikunja" "docker-archive:.local/module.tar:$REPOBASE/vikunja:$IMAGETAG"
-          buildah push "$REPOBASE/vikunja-postgres:15.20-ns8.1" "docker-archive:.local/postgres.tar:$REPOBASE/vikunja-postgres:15.20-ns8.1"
-      - name: Smoke test patched PostgreSQL
+          buildah push "$REPOBASE/vikunja-postgres:19.0-ns8.1" "docker-archive:.local/postgres.tar:$REPOBASE/vikunja-postgres:19.0-ns8.1"
+      - name: Smoke test Vikunja with PostgreSQL 19
         env:
           OWNER: ${{ github.repository_owner }}
         run: |
-          trap 'podman rm --force --volumes pg-candidate >/dev/null 2>&1 || true' EXIT
+          trap 'podman rm --force --volumes vikunja-candidate pg-candidate >/dev/null 2>&1 || true; podman pod rm --force ns8-vikunja-smoke >/dev/null 2>&1 || true' EXIT
           export POSTGRES_PASSWORD="$(openssl rand -hex 32)"
-          podman run --detach --name pg-candidate --env POSTGRES_PASSWORD "ghcr.io/${OWNER,,}/vikunja-postgres:15.20-ns8.1"
+          export VIKUNJA_SERVICE_SECRET="$(openssl rand -hex 32)"
+          export VIKUNJA_DATABASE_PASSWORD="$POSTGRES_PASSWORD"
+          podman pod create --name ns8-vikunja-smoke --publish 127.0.0.1:3456:3456
+          podman run --detach --pod ns8-vikunja-smoke --name pg-candidate --env POSTGRES_PASSWORD "ghcr.io/${OWNER,,}/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1"
           for i in $(seq 1 40); do
             if podman exec pg-candidate pg_isready -U postgres; then break; fi
             sleep 1
           done
-          podman exec pg-candidate psql -U postgres -v ON_ERROR_STOP=1 -c 'CREATE TABLE candidate_test (id integer); INSERT INTO candidate_test VALUES (1);'
-          podman restart pg-candidate
-          for i in $(seq 1 40); do
-            if podman exec pg-candidate pg_isready -U postgres; then break; fi
-            sleep 1
-          done
-          test "$(podman exec pg-candidate psql -U postgres -Atc 'SELECT count(*) FROM candidate_test')" = 1
-          podman exec pg-candidate pg_dump -U postgres --format=c postgres > .local/postgres-smoke.dump
+          test "$(podman exec pg-candidate psql -U postgres -Atc 'SHOW server_version')" = 19.0
+          podman exec pg-candidate createdb -U postgres vikunja
+          podman run --detach --pod ns8-vikunja-smoke --name vikunja-candidate \
+            --volume vk-test-files:/app/vikunja/files:U \
+            --env VIKUNJA_DATABASE_PASSWORD --env VIKUNJA_SERVICE_SECRET \
+            --env VIKUNJA_DATABASE_TYPE=postgres --env VIKUNJA_DATABASE_HOST=127.0.0.1:5432 \
+            --env VIKUNJA_DATABASE_USER=postgres --env VIKUNJA_DATABASE_DATABASE=vikunja \
+            --env VIKUNJA_DATABASE_SSLMODE=disable --env VIKUNJA_MAILER_ENABLED=false \
+            --env VIKUNJA_SERVICE_PUBLICURL=http://127.0.0.1:3456 \
+            docker.io/vikunja/vikunja:2.8.0
+          python3 tools/smoke_postgres_stack.py http://127.0.0.1:3456 create .local/synthetic-stack.json
+          python3 tools/smoke.py http://127.0.0.1:3456
+          podman restart vikunja-candidate pg-candidate
+          python3 tools/smoke_postgres_stack.py http://127.0.0.1:3456 verify .local/synthetic-stack.json
+          podman exec pg-candidate pg_dump -U postgres --format=c vikunja > .local/postgres-smoke.dump
+          podman exec pg-candidate createdb -U postgres restored
+          podman exec --interactive pg-candidate pg_restore -U postgres --no-owner --exit-on-error -d restored < .local/postgres-smoke.dump
+          test "$(podman exec pg-candidate psql -U postgres -d restored -Atc 'SELECT count(*) FROM tasks')" = 1
       - name: Scan module archive
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0, Apache-2.0
         with:
@@ -91,8 +112,8 @@ jobs:
         run: |
           trap 'buildah logout ghcr.io' EXIT
           printf '%s' "$REGISTRY_TOKEN" | buildah login --username "$ACTOR" --password-stdin ghcr.io
-          image="ghcr.io/${OWNER,,}/vikunja"
-          database="ghcr.io/${OWNER,,}/vikunja-postgres:15.20-ns8.1"
+          image="ghcr.io/${OWNER,,}/ns8-vikunja-build/vikunja"
+          database="ghcr.io/${OWNER,,}/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1"
           buildah push --digestfile .local/postgres.digest "$database" "docker://$database"
           buildah push --digestfile .local/module.digest "$image" "docker://$image:$IMAGE_TAG"
           printf 'Candidate: `%s:%s`\n\nDigest: `%s`\n' "$image" "$IMAGE_TAG" "$(cat .local/module.digest)" >> "$GITHUB_STEP_SUMMARY"
@@ -102,5 +123,7 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python3 tools/registry_visibility.py "$OWNER"
-          python3 tools/registry_visibility.py "$OWNER" --package vikunja-postgres
+          status=0
+          python3 tools/registry_visibility.py "$OWNER" --withdraw-public || status=1
+          python3 tools/registry_visibility.py "$OWNER" --package vikunja-postgres --withdraw-public || status=1
+          exit "$status"

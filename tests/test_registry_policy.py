@@ -1,4 +1,6 @@
 import io
+import datetime
+import json
 import os
 import unittest
 import urllib.error
@@ -35,3 +37,22 @@ class RegistryPolicy(unittest.TestCase):
                 patch("urllib.request.urlopen", side_effect=error):
             with self.assertRaisesRegex(RuntimeError, "HTTP 403"):
                 check("example-owner", allow_absent=True)
+
+    def test_new_public_candidate_is_withdrawn_then_run_still_fails(self):
+        metadata = {"visibility": "public", "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()}
+        versions = [{"metadata": {"container": {"tags": ["vikunja-2.8.0"]}}}]
+        responses = [io.BytesIO(json.dumps(metadata).encode()),
+                     io.BytesIO(json.dumps(versions).encode()), io.BytesIO(b"")]
+        with patch.dict(os.environ, {"GH_TOKEN": "synthetic-test-token"}), \
+                patch("urllib.request.urlopen", side_effect=responses) as opener:
+            with self.assertRaisesRegex(RuntimeError, "not private"):
+                check("example-owner", withdraw_public=True)
+            self.assertEqual(opener.call_args_list[-1].args[0].get_method(), "DELETE")
+
+    def test_privacy_remediation_never_deletes_an_older_package(self):
+        metadata = {"visibility": "public", "created_at": "2000-01-01T00:00:00Z"}
+        with patch.dict(os.environ, {"GH_TOKEN": "synthetic-test-token"}), \
+                patch("urllib.request.urlopen", return_value=io.BytesIO(json.dumps(metadata).encode())) as opener:
+            with self.assertRaisesRegex(RuntimeError, "older package"):
+                check("example-owner", withdraw_public=True)
+            self.assertEqual(opener.call_count, 1)

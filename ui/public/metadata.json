@@ -19,5 +19,5 @@
     "bug_url": "https://github.com/amulyawan/ns8-vikunja/issues",
     "code_url": "https://github.com/amulyawan/ns8-vikunja"
   },
-  "source": "ghcr.io/amulyawan/vikunja"
+  "source": "ghcr.io/amulyawan/ns8-vikunja-build/vikunja"
 }

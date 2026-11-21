@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import runpy
+import subprocess
 import tempfile
 import types
 import unittest
@@ -123,6 +124,28 @@ class ModuleContract(unittest.TestCase):
         self.assertIn("ExecStartPre=runagent discover-smarthost", service)
         self.assertIn("--env-file=%S/state/smarthost.env", service)
         self.assertIn("vikunja-app:/app/vikunja/files/:Z,U", service)
+
+    def test_postgres19_service_and_restore_share_new_parent_volume(self):
+        service = (ROOT / "imageroot/systemd/user/postgresql-app.service").read_text()
+        restore = (ROOT / "imageroot/actions/restore-module/40restore_database").read_text()
+        self.assertIn("postgres19-data:/var/lib/postgresql:Z", service)
+        self.assertIn("postgres19-data:/var/lib/postgresql:Z", restore)
+
+    @unittest.skipUnless(os.name == "posix", "POSIX migration guard")
+    def test_legacy_volume_requires_verified_migration_marker(self):
+        tools = Path("fake-bin")
+        tools.mkdir()
+        podman = tools / "podman"
+        podman.write_text('#!/bin/sh\nexit "$SYNTHETIC_VOLUME_STATUS"\n')
+        podman.chmod(0o700)
+        env = dict(os.environ, PATH=str(tools.resolve()) + os.pathsep + os.environ["PATH"])
+        script = str(ROOT / "imageroot/update-module.d/05require-postgres19-migration")
+        env["SYNTHETIC_VOLUME_STATUS"] = "1"
+        self.assertEqual(subprocess.run(["bash", script], env=env, capture_output=True).returncode, 0)
+        env["SYNTHETIC_VOLUME_STATUS"] = "0"
+        self.assertNotEqual(subprocess.run(["bash", script], env=env, capture_output=True).returncode, 0)
+        Path("postgres19-migration-complete").write_text("19\n")
+        self.assertEqual(subprocess.run(["bash", script], env=env, capture_output=True).returncode, 0)
 
 
 if __name__ == "__main__":

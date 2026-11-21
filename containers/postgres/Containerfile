@@ -7,10 +7,12 @@ RUN git clone --depth 1 --branch 1.20 https://github.com/tianon/gosu.git . \
     && test "$(git rev-parse HEAD)" = 29b939aa5bd4dc588af765b8248f6e39150d2565 \
     && CGO_ENABLED=0 GOMAXPROCS=2 GOMEMLIMIT=512MiB go build -mod=readonly -trimpath -o /out/gosu .
 
-FROM docker.io/library/postgres:15.20-alpine3.24@sha256:e18480a22d6e48f4d816a6696769b1ec09ac73a824c5649e49c7d8b684913f3d
-# Preserve PostgreSQL, entrypoint, initdb and volume paths; patch base packages.
+FROM docker.io/library/postgres:19.0-alpine3.24@sha256:8b0ff4cdf221f0c53d7fcda681d3b461be725c492cd881c5ec9c0ad25023f188
+# Preserve the official PostgreSQL 19 entrypoint/initdb; patch base packages.
 RUN apk upgrade --no-cache
 COPY --from=helper /out/gosu /usr/local/bin/gosu
 COPY --from=helper /src/LICENSE /usr/local/share/licenses/gosu/LICENSE
+COPY --from=helper /usr/local/go/LICENSE /usr/local/share/licenses/gosu/Go-LICENSE
+COPY --from=helper /go/pkg/mod/golang.org/x/sys@v0.1.0/LICENSE /usr/local/share/licenses/gosu/x-sys-LICENSE
 RUN gosu nobody true && postgres --version
-LABEL org.opencontainers.image.licenses="PostgreSQL AND Apache-2.0"
+LABEL org.opencontainers.image.licenses="PostgreSQL AND Apache-2.0 AND BSD-3-Clause"

@@ -12,11 +12,19 @@ image resmi Vikunja yang sudah menyertakan frontend dan backend aplikasi.
 Frontend Vue dalam folder `ui/` adalah panel pengaturan NS8, bukan frontend
 Vikunja. PostgreSQL tetap dikelola di dalam pod aplikasi NS8.
 
+PostgreSQL berjalan sebagai container tersendiri, menggunakan image Docker/OCI
+yang dijalankan Podman. "Versi dari modul awal" berarti nomor image yang sudah
+ditentukan dalam source modul yang di-clone; bukan database bawaan OS NS8 dan
+bukan data lama yang diambil. Sesuai koreksi pemilik, instalasi baru kini memakai
+rilis terbaru **PostgreSQL 19.0**, bukan mempertahankan 15.20 hanya karena pilihan
+source lama. Menghindari migrasi major hanya relevan bila meng-upgrade instance
+yang sudah memiliki data; instalasi baru tidak memiliki hambatan migrasi itu.
+
 - **Fork** membuat salinan repository di akun GitHub Anda, dengan hubungan upstream.
 - **Clone** mengunduh repository ke komputer untuk dikerjakan.
 - **Commit** menyimpan checkpoint perubahan secara lokal.
 - **Push** mengirim commit ke GitHub.
-- **Build** menghasilkan image paket NS8, misalnya `ghcr.io/amulyawan/vikunja:vikunja-2.8.0`.
+- **Build** menghasilkan image paket NS8, misalnya `ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0`.
 - **Publish** mengunggah image ke GitHub Container Registry (GHCR).
 - **Install** membuat instance aplikasi di NS8 menggunakan image tersebut.
 
@@ -38,7 +46,7 @@ Gunakan tag kandidat yang unik; hindari `latest` untuk pengujian upgrade.
 | source_artifact_or_repo | fork dari geniusdynamics/ns8-vikunja |
 | affected_consumers | pengguna Vikunja, database, lampiran, SMTP, klien API/MCP |
 | configuration_files | state/environment, database.env, vikunja-db.env, vikunja.env, smarthost.env |
-| data_store_policy | PostgreSQL di volume postgres-data; lampiran di volume vikunja-app |
+| data_store_policy | PostgreSQL 19 di volume postgres19-data pada /var/lib/postgresql; lampiran di volume vikunja-app |
 | secrets_policy | secret dibuat di NS8; jangan dimasukkan ke repository atau log publik |
 | ports_and_firewall_policy | backend dipetakan ke loopback; akses melalui Traefik/TLS |
 | backup_path | snapshot VM + tujuan backup NS8 yang dicatat secara privat |
@@ -102,7 +110,12 @@ git push -u owner vikunja-2.8.0
 Perintah `remote add owner` hanya dijalankan jika nama tersebut belum ada.
 Jangan mengganti remote lain atau menggunakan force push. Fork repository
 publik umumnya tetap publik; hanya source yang telah disanitasi boleh dikirim.
-Fork/push di atas belum dijalankan dalam pekerjaan persiapan ini.
+Fork/push publik sudah disetujui dan dijalankan. Untuk image khusus pemilik,
+publikasi dilakukan dari repository privat `amulyawan/ns8-vikunja-build`.
+Repository privat ini menampung source kandidat yang sama dan workflow build,
+sedangkan fork publik tetap menjadi tempat pengembangan source.
+Remote lokal `private-build` digunakan untuk menyinkronkan branch kandidat
+yang sudah dipindai. Jangan menyinkronkan direktori `.local` atau kredensial.
 
 ## 5. Apa yang diubah
 
@@ -111,11 +124,13 @@ Fork/push di atas belum dijalankan dalam pekerjaan persiapan ini.
 2. Konfigurasi baru memakai `VIKUNJA_SERVICE_SECRET`. Hook upgrade menyalin
    nilai JWT secret lama ke nama baru, mempertahankan password database dan
    host database kustom. Salinan pemulihan lokal dibuat sebelum perubahan.
-3. Host PostgreSQL bawaan memakai loopback pod. Major PostgreSQL tetap **15**.
+3. Host PostgreSQL bawaan memakai loopback pod. Versi baru memakai **19.0**.
    Scan pertama menemukan kerentanan pada library/helper image resmi yang
-   diwarisi. `containers/postgres/Containerfile` mempertahankan PostgreSQL 15.20,
+   sebelumnya digunakan. `containers/postgres/Containerfile` memakai PostgreSQL 19.0,
    memperbarui paket Alpine, dan membangun ulang gosu 1.20 dengan Go 1.27.4.
-   Hasilnya adalah runtime privat `ghcr.io/amulyawan/vikunja-postgres:15.20-ns8.1`.
+   Hasilnya adalah runtime privat `ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1`.
+   Volume PostgreSQL 19 dipasang ke `/var/lib/postgresql`, dengan PGDATA bawaan
+   `/var/lib/postgresql/19/docker`. Volume lama tidak dipasang ke database baru.
 4. Volume lampiran menggunakan `:Z,U` untuk SELinux dan UID container 1000.
    `:U` menyesuaikan kepemilikan isi volume; uji dengan lampiran lama di staging.
 5. Backup menyertakan konfigurasi database, secret, konfigurasi aplikasi, dump,
@@ -132,7 +147,7 @@ MCP tambahan atau membuka port kedua. Token dibuat melalui menu Settings → MCP
 
 Sesudah fork/push disetujui:
 
-1. Buka fork di GitHub → **Actions**. Aktifkan workflow jika GitHub memintanya.
+1. Buka repository privat **amulyawan/ns8-vikunja-build** → **Actions**.
 2. Pastikan workflow **Validate source** pada branch kandidat berhasil.
 3. Pilih **Publish images** → **Run workflow** → branch `vikunja-2.8.0`.
 4. Tunggu validasi source, build, scan Trivy, lalu push. Scan HIGH/CRITICAL
@@ -142,7 +157,8 @@ Sesudah fork/push disetujui:
 6. Sesuai keputusan pemilik 22 November 2026, image **harus privat di GHCR**.
    Fork source tetap publik. Workflow memeriksa visibilitas package sebelum
    publikasi dan sesudah push; package publik yang sudah ada akan ditolak.
-   Package baru dibuat privat secara default oleh GitHub. Jangan mengubahnya
+   Workflow menolak publikasi dari repository publik. Namespace image baru
+   adalah `ghcr.io/amulyawan/ns8-vikunja-build/...`. Jangan mengubahnya
    menjadi publik atau membagikan akses kepada pihak lain tanpa persetujuan.
    NS8 memerlukan autentikasi registry untuk menarik kedua image privat,
    yaitu `vikunja` dan `vikunja-postgres`.
@@ -154,11 +170,11 @@ Sesudah fork/push disetujui:
 Alternatif CLI, setelah otorisasi publikasi:
 
 ```powershell
-gh workflow run publish-images.yml --repo amulyawan/ns8-vikunja --ref vikunja-2.8.0
-gh run list --repo amulyawan/ns8-vikunja --limit 10
+gh workflow run publish-images.yml --repo amulyawan/ns8-vikunja-build --ref vikunja-2.8.0
+gh run list --repo amulyawan/ns8-vikunja-build --limit 10
 ```
 
-Hasil yang diharapkan: `ghcr.io/amulyawan/vikunja:vikunja-2.8.0`.
+Hasil yang diharapkan: `ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0`.
 Modul NS8 ini adalah image paket berbasis scratch; pemeriksaan keamanan image
 paket saja tidak memeriksa aplikasi. Scan juga image Vikunja dan PostgreSQL.
 Periksa biaya/kuota Actions dan package akun sebelum penggunaan runner.
@@ -194,8 +210,8 @@ Di kedua distro, dalam repository:
 
 ```bash
 python3 tools/validate.py
-REPOBASE=ghcr.io/amulyawan IMAGETAG=vikunja-2.8.0 bash build-images.sh
-buildah inspect ghcr.io/amulyawan/vikunja
+REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=vikunja-2.8.0 bash build-images.sh
+buildah inspect ghcr.io/amulyawan/ns8-vikunja-build/vikunja
 ```
 
 Periksa label `org.nethserver.images`, `org.nethserver.min-core`, port demand,
@@ -205,8 +221,8 @@ di command line atau di repository:
 
 ```bash
 buildah login ghcr.io
-buildah push ghcr.io/amulyawan/vikunja-postgres:15.20-ns8.1 docker://ghcr.io/amulyawan/vikunja-postgres:15.20-ns8.1
-buildah push ghcr.io/amulyawan/vikunja docker://ghcr.io/amulyawan/vikunja:vikunja-2.8.0
+buildah push ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1 docker://ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1
+buildah push ghcr.io/amulyawan/ns8-vikunja-build/vikunja docker://ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0
 buildah logout ghcr.io
 ```
 
@@ -234,7 +250,7 @@ aplikasi. Akses salah satu konteks saja belum membuktikan keduanya berhasil.
 Pada shell root **node staging NS8**, ganti `1` dengan node ID yang benar:
 
 ```bash
-add-module ghcr.io/amulyawan/vikunja:vikunja-2.8.0 1
+add-module ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0 1
 ```
 
 Catat `module_id` dari output. Contoh berikut mengasumsikan `vikunja1`;
@@ -299,14 +315,20 @@ Jika sudah ada instance lama:
    backup lama yang belum pernah berhasil direstore.
 3. Bangun dataset sintetis pada NS8 staging dengan modul 1.1.0. Untuk data nyata,
    penggunaan salinan produksi memerlukan persetujuan dan kontrol privasi tersendiri.
-4. Uji upgrade staging ke kandidat; periksa log migrasi dan seluruh gate bagian 9.
-   Migrasi database dijalankan oleh aplikasi saat startup. Jangan sekaligus
-   mengganti major PostgreSQL. Jangan mengklaim lompatan 1.1.0 → 2.8.0 didukung
+4. Kandidat baru memakai PostgreSQL 19. **Upgrade langsung dari volume PostgreSQL
+   15 diblokir** oleh hook `05require-postgres19-migration`. Ekspor database lama
+   dengan pg_dump, lalu restore ke PostgreSQL 19 di instance staging terpisah;
+   jangan memasang direktori data 15 ke server 19. Periksa data, lampiran dan
+   secret sebelum menjalankan migrasi schema Vikunja dan seluruh gate bagian 9.
+   Setelah migrasi benar-benar selesai dan diverifikasi, operator dapat menaruh
+   marker privat `postgres19-migration-complete` berisi `19` dalam state instance.
+   Marker bukan alat migrasi dan tidak boleh dibuat hanya untuk melewati blokir.
+   Jangan mengklaim lompatan 1.1.0 → 2.8.0 didukung
    hanya karena aplikasi bisa start dengan database kosong.
-5. Perintah berikut hanya untuk **instance staging yang telah diverifikasi**:
+5. Perintah berikut hanya untuk **instance staging yang telah dimigrasikan dan diverifikasi**:
 
 ```bash
-api-cli run update-module --data '{"module_url":"ghcr.io/amulyawan/vikunja:vikunja-2.8.0","instances":["vikunja1"]}'
+api-cli run update-module --data '{"module_url":"ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0","instances":["vikunja1"]}'
 ```
 
 6. Periksa konfigurasi, versi API, akses pengguna, file, SMTP, token, dan backup.
