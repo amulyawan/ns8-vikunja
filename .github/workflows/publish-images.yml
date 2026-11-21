@@ -52,7 +52,17 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
         run: |
-          trap 'podman rm --force --volumes vikunja-candidate pg-candidate >/dev/null 2>&1 || true; podman pod rm --force ns8-vikunja-smoke >/dev/null 2>&1 || true' EXIT
+          cleanup() {
+            status=$?
+            if [[ "$status" != 0 ]]; then
+              podman logs --tail 60 vikunja-candidate >&2 || true
+              podman logs --tail 60 pg-candidate >&2 || true
+            fi
+            podman rm --force --volumes vikunja-candidate pg-candidate >/dev/null 2>&1 || true
+            podman pod rm --force ns8-vikunja-smoke >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
           export POSTGRES_PASSWORD="$(openssl rand -hex 32)"
           export VIKUNJA_SERVICE_SECRET="$(openssl rand -hex 32)"
           export VIKUNJA_DATABASE_PASSWORD="$POSTGRES_PASSWORD"
@@ -74,7 +84,12 @@ jobs:
             docker.io/vikunja/vikunja:2.8.0
           python3 tools/smoke_postgres_stack.py http://127.0.0.1:3456 create .local/synthetic-stack.json
           python3 tools/smoke.py http://127.0.0.1:3456
-          podman restart vikunja-candidate pg-candidate
+          podman restart pg-candidate
+          for i in $(seq 1 40); do
+            if podman exec pg-candidate pg_isready -U postgres; then break; fi
+            sleep 1
+          done
+          podman restart vikunja-candidate
           python3 tools/smoke_postgres_stack.py http://127.0.0.1:3456 verify .local/synthetic-stack.json
           podman exec pg-candidate pg_dump -U postgres --format=c vikunja > .local/postgres-smoke.dump
           podman exec pg-candidate createdb -U postgres restored

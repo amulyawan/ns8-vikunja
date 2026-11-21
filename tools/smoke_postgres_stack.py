@@ -15,24 +15,27 @@ args = parser.parse_args()
 base = args.base_url.rstrip("/") + "/api/v2"
 
 
-def call(path, method="GET", data=None, token=None):
+def call(path, method="GET", data=None, token=None, timeout=15):
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = "Bearer " + token
     request = urllib.request.Request(base + path, method=method, headers=headers,
         data=json.dumps(data).encode() if data is not None else None)
-    with urllib.request.urlopen(request, timeout=15) as response:
+    with urllib.request.urlopen(request, timeout=timeout) as response:
         return json.load(response)
 
 
-for attempt in range(60):
+deadline = time.monotonic() + 90
+last_error = None
+while time.monotonic() < deadline:
     try:
-        if call("/health")["status"] == "OK":
+        if call("/health", timeout=2)["status"] == "OK":
             break
-    except Exception:
+    except Exception as error:
+        last_error = str(error)
         time.sleep(1)
 else:
-    raise RuntimeError("Vikunja/PostgreSQL stack readiness timed out")
+    raise RuntimeError("Vikunja/PostgreSQL stack readiness timed out: " + str(last_error))
 
 if args.phase == "create":
     state = {"username": "ns8smoke", "password": secrets.token_urlsafe(24)}
