@@ -40,7 +40,7 @@ echo "Build Vikunja frontend with the documented organization policy..."
 buildah run --workingdir=/usr/src/.local/ldap-sync-out/frontend \
     --env=PUPPETEER_SKIP_DOWNLOAD=true --env=CYPRESS_INSTALL_BINARY=0 \
     --env=NODE_OPTIONS=--max-old-space-size=4096 nodebuilder-vikunja \
-    sh -c 'pnpm install --frozen-lockfile && pnpm run build'
+    sh -c 'pnpm install --frozen-lockfile && pnpm run typecheck && pnpm exec vitest run src/components/teams/DirectoryGroups.test.ts && pnpm run build'
 buildah run "${ldap_builder}" bash /integration/web-build.sh
 buildah rm "${ldap_builder}"
 

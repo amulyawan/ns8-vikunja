@@ -87,6 +87,12 @@ class DirectoryAuthentication(unittest.TestCase):
             self.assertEqual(config["VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME"], "true")
             self.assertEqual(config["VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_EMAIL"], "true")
 
+    def test_directory_writeback_requires_selected_domain_and_sync(self):
+        self.assertEqual(self.discover("ad.example.org")["NS8_DIRECTORY_SYNC_ENABLED"], "false")
+        with patch.dict(os.environ, {"LDAP_SYNC_PROFILES": "true"}):
+            self.assertEqual(self.discover("ad.example.org")["NS8_DIRECTORY_SYNC_ENABLED"], "true")
+            self.assertEqual(self.discover("")["NS8_DIRECTORY_SYNC_ENABLED"], "false")
+
     def test_runtime_can_reach_native_proxy_and_loads_generated_auth_last(self):
         pod = (ROOT / "imageroot/systemd/user/vikunja.service").read_text()
         app = (ROOT / "imageroot/systemd/user/vikunja-app.service").read_text()

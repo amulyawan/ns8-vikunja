@@ -68,3 +68,8 @@ RC5 provisions LDAP profiles before first login and maps primary/nested director
 to external teams on a fifteen-minute timer. Both discovery Privacy controls are
 mandatory in UI and API. Directory-membership writeback from the UI is a separate
 follow-up; RC5 directory access is read-only.
+
+The RC6 candidate adds actor-authorized directory membership changes from Teams,
+with fresh LDAP credential confirmation, recovery records, and independent
+project management. See the [AD group administration runbook](docs/ADMIN-GROUP-AD-ID.md)
+for authorization, primary/inherited membership, and validation limits.

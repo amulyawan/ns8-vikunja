@@ -254,3 +254,10 @@ jika anchor versi pin berubah. UI dan backend dibangun dari source yang sama.
 CI mengirim permintaan API false, lalu memeriksa bahwa kedua nilai tetap true
 dan pengaturan lain tidak berubah. Simpan backup sebelum migrasi; pemulihan
 pilihan privasi lama memerlukan snapshot atau catatan nilai sebelum migrasi.
+
+## 9. Pengelolaan anggota AD dari UI (kandidat RC6)
+
+RC5 hanya membaca directory. Kandidat berikutnya menambah perubahan anggota
+yang diotorisasi sebagai pengguna AD, dengan password sendiri dan pemeriksaan
+ACL pada group terkait. Hak Admin Team/NS8 tidak menggantikan izin AD.
+Project tetap independen. Lihat [langkah pengelolaan group](ADMIN-GROUP-AD-ID.md).

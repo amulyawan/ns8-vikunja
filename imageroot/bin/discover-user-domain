@@ -6,6 +6,7 @@ from agent.ldapproxy import Ldapproxy
 
 domain = os.environ.get("LDAP_USER_DOMAIN", "")
 settings = {"VIKUNJA_AUTH_LDAP_ENABLED": "false",
+            "NS8_DIRECTORY_SYNC_ENABLED": "false",
             "VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME": "true",
             "VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_EMAIL": "true"}
 if domain:
@@ -21,6 +22,7 @@ if domain:
     visible = proxy.get_ldap_users_search_filter_clause(domain)
     settings.update({
         "VIKUNJA_AUTH_LDAP_ENABLED": "true",
+        "NS8_DIRECTORY_SYNC_ENABLED": "true" if os.environ.get("LDAP_SYNC_PROFILES") == "true" else "false",
         "VIKUNJA_AUTH_LOCAL_ENABLED": "false",
         "VIKUNJA_SERVICE_ENABLEREGISTRATION": "false",
         # NS8's host-loopback L4 proxy provides upstream LDAP TLS. slirp's

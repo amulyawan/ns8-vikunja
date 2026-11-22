@@ -35,7 +35,7 @@ func NS8LoadDirectoryGroups(connection *ldap.Conn) (*NS8DirectoryGroups, error) 
 	result, err := connection.SearchWithPaging(ldap.NewSearchRequest(
 		config.AuthLdapBaseDN.GetString(), ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		5000, 20, false, "(|(objectClass=group)(objectClass=groupOfNames)(objectClass=posixGroup))",
-		[]string{"cn", "description", "member", "memberUid", "objectSid", config.AuthLdapAttributeID.GetString()}, nil,
+		[]string{"cn", "description", "objectClass", "member", "memberUid", "objectSid", "allowedAttributesEffective", config.AuthLdapAttributeID.GetString()}, nil,
 	), 500)
 	if err != nil {
 		return nil, fmt.Errorf("directory group snapshot failed")
@@ -46,6 +46,9 @@ func NS8LoadDirectoryGroups(connection *ldap.Conn) (*NS8DirectoryGroups, error) 
 func ns8BuildGroups(entries []*ldap.Entry) (*NS8DirectoryGroups, error) {
 	g := &NS8DirectoryGroups{entries: entries, teams: map[string]*models.Team{}, parents: map[string][]string{}, sids: map[string]string{}}
 	for _, entry := range entries {
+		if err := ns8CompleteMembership(entry); err != nil {
+			return nil, err
+		}
 		id, err := directoryID(entry, config.AuthLdapAttributeID.GetString())
 		if err != nil || entry.GetEqualFoldAttributeValue("cn") == "" {
 			return nil, fmt.Errorf("group lacks stable identity or name")

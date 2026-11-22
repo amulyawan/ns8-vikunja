@@ -84,6 +84,7 @@ jobs:
           podman run --detach --pod ns8-vikunja-smoke --name vikunja-candidate \
             --volume vk-test-files:/app/vikunja/files:U \
             --volume "$PWD/.local/ldap-sync-out/vikunja:/app/vikunja/vikunja:ro,Z" \
+            --volume "$PWD/.local/ldap-sync-out/ns8-directory-storage-check:/app/vikunja/ns8-directory-storage-check:ro,Z" \
             --env VIKUNJA_DATABASE_PASSWORD --env VIKUNJA_SERVICE_SECRET \
             --env VIKUNJA_DATABASE_TYPE=postgres --env VIKUNJA_DATABASE_HOST=127.0.0.1:5432 \
             --env VIKUNJA_DATABASE_USER=postgres --env VIKUNJA_DATABASE_DATABASE=vikunja \
@@ -92,6 +93,8 @@ jobs:
             docker.io/vikunja/vikunja:2.8.0
           python3 tools/smoke_postgres_stack.py http://127.0.0.1:3456 create .local/synthetic-stack.json
           python3 tools/smoke_discovery_policy.py http://127.0.0.1:3456 .local/synthetic-stack.json
+          python3 tools/smoke_directory_boundary.py http://127.0.0.1:3456 .local/synthetic-stack.json
+          podman exec vikunja-candidate /app/vikunja/ns8-directory-storage-check
           python3 tools/smoke.py http://127.0.0.1:3456
           podman restart pg-candidate
           for i in $(seq 1 40); do

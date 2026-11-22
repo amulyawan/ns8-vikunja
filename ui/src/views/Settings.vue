@@ -47,11 +47,14 @@
               </cv-select-option>
             </cv-select>
             <p class="mg-bottom">{{ $t('settings.user_domain_help') }}</p>
-            <cv-select v-if="userDomain" :label="$t('settings.ldap_email_attribute')" v-model="ldapEmailAttribute"
-              :disabled="loading.getConfiguration || loading.configureModule" class="mg-bottom">
-              <cv-select-option value="mail" :selected="ldapEmailAttribute === 'mail'">mail</cv-select-option>
-              <cv-select-option value="userPrincipalName" :selected="ldapEmailAttribute === 'userPrincipalName'">userPrincipalName (AD)</cv-select-option>
-            </cv-select>
+            <div v-if="userDomain" class="mg-bottom">
+              <label for="ldap-email-attribute" class="bx--label">{{ $t('settings.ldap_email_attribute') }}</label>
+              <select id="ldap-email-attribute" v-model="ldapEmailAttribute" class="bx--select-input"
+                :disabled="loading.getConfiguration || loading.configureModule">
+                <option value="mail">mail</option>
+                <option value="userPrincipalName">userPrincipalName (AD)</option>
+              </select>
+            </div>
             <div v-if="userDomain" class="mg-bottom">
               <cv-checkbox value="ldapSync" v-model="ldapSyncEnabled"
                 :label="$t('settings.ldap_sync_profiles')"

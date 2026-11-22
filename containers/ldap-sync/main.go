@@ -38,6 +38,13 @@ func run() error {
 	if !config.AuthLdapEnabled.GetBool() || config.AuthLdapAttributeID.GetString() == "" {
 		return fmt.Errorf("directory provisioning requires LDAP and an immutable id attribute")
 	}
+	if *apply {
+		lock, err := native.NS8AcquireDirectoryLock()
+		if err != nil {
+			return err
+		}
+		defer func() { _ = lock.Rollback(); lock.Close() }()
+	}
 	connection, err := native.ConnectAndBindToLDAPDirectory()
 	if err != nil {
 		return fmt.Errorf("directory connection or bind failed")

@@ -7,7 +7,7 @@ enabled = bool(os.environ.get("LDAP_USER_DOMAIN")) and os.environ.get("LDAP_SYNC
 if enabled:
     subprocess.run(["systemctl", "--user", "enable", "--now", "vikunja-ldap-sync.timer"], check=True)
     # Systemd serializes this initial invocation with any timer invocation.
-    subprocess.run(["systemctl", "--user", "restart", "vikunja-ldap-sync.service"], check=True)
+    subprocess.run(["systemctl", "--user", "start", "vikunja-ldap-sync.service"], check=True)
 else:
     subprocess.run(["systemctl", "--user", "disable", "--now", "vikunja-ldap-sync.timer"], check=True)
     subprocess.run(["systemctl", "--user", "stop", "vikunja-ldap-sync.service"], check=True)

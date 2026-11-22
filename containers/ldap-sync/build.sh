@@ -9,13 +9,20 @@ curl --fail --location --retry 3 "https://codeload.github.com/go-vikunja/vikunja
 echo "${source_sha}  /work/source.tar.gz" | sha256sum -c -
 tar -xzf /work/source.tar.gz -C /work/api --strip-components=1
 python3 /integration/apply-policy.py /work/api
+cp /integration/DirectoryGroups.vue /work/api/frontend/src/components/teams/DirectoryGroups.vue
+cp /integration/DirectoryGroups.test.ts /work/api/frontend/src/components/teams/DirectoryGroups.test.ts
 cp /integration/ns8_*.go /work/api/pkg/modules/auth/ldap/
+cp /integration/directory_api*.go /work/api/pkg/routes/api/v2/
 mkdir -p /work/api/cmd/ns8-ldap-sync
 cp /integration/main*.go /work/api/cmd/ns8-ldap-sync/
 cd /work/api
 export CGO_ENABLED=1 GOTOOLCHAIN=local GOMAXPROCS=2 GOMEMLIMIT=1536MiB
 go test -mod=readonly ./cmd/ns8-ldap-sync ./pkg/modules/auth/ldap -run 'Test(NS8|DirectoryFilter)'
+go test -mod=readonly ./pkg/routes/api/v2 -run '^TestNS8Directory'
 go build -mod=readonly -trimpath -ldflags='-s -w -linkmode external -extldflags "-static"' -o /out/ns8-ldap-sync ./cmd/ns8-ldap-sync
+mkdir -p cmd/ns8-directory-storage-check
+cp /integration/storage_main.go cmd/ns8-directory-storage-check/main.go
+go build -mod=readonly -trimpath -tags ns8storagetest -ldflags='-s -w -linkmode external -extldflags "-static"' -o /out/ns8-directory-storage-check ./cmd/ns8-directory-storage-check
 if [[ "${SKIP_FRONTEND_SOURCE:-0}" != 1 ]]; then
   mkdir -p /out/frontend
   cp -a /work/api/frontend/. /out/frontend/
