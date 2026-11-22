@@ -7,7 +7,7 @@ Migrasi data dari modul 1.1.0, email nyata dan TLS domain tim masih memerlukan v
 **Hasil pekerjaan:** fork publik `amulyawan/ns8-vikunja` tersedia. Build dan
 publikasi final dijalankan dari repository privat `amulyawan/ns8-vikunja-build`.
 Run 44963956861 lulus dengan Vikunja 2.8.0 + PostgreSQL 19.0 dan modul
-`2.8.0-rc.2`. Instalasi NS8 aktual, restart, lampiran, pembatasan lintas pengguna,
+`2.8.0-rc.5`. Instalasi NS8 aktual, restart, lampiran, pembatasan lintas pengguna,
 MCP, backup–restore ke instance terpisah dan update melalui web UI sudah lulus.
 Lihat [panduan instalasi terpisah](INSTALASI-UJI-NS8-ID.md) dan `VALIDATION.md`.
 
@@ -31,7 +31,7 @@ yang sudah memiliki data; instalasi baru tidak memiliki hambatan migrasi itu.
 - **Clone** mengunduh repository ke komputer untuk dikerjakan.
 - **Commit** menyimpan checkpoint perubahan secara lokal.
 - **Push** mengirim commit ke GitHub.
-- **Build** menghasilkan image paket NS8, misalnya `ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2`.
+- **Build** menghasilkan image paket NS8, misalnya `ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5`.
 - **Publish** mengunggah image ke GitHub Container Registry (GHCR).
 - **Install** membuat instance aplikasi di NS8 menggunakan image tersebut.
 
@@ -39,7 +39,7 @@ Alur: fork → perubahan lokal → validasi → push → build/publish kandidat 
 instalasi staging → uji migrasi dan pemulihan → persetujuan produksi.
 
 Nomor versi modul dan aplikasi merupakan dua hal berbeda. Untuk kandidat ini,
-aplikasi adalah **2.8.0** dan tag image modul adalah **2.8.0-rc.2**. Branch source tetap `vikunja-2.8.0`;
+aplikasi adalah **2.8.0** dan tag image modul adalah **2.8.0-rc.5**. Branch source tetap `vikunja-2.8.0`;
 tag image harus semver agar Software Center dapat membandingkan versi.
 Gunakan tag kandidat yang unik; hindari `latest` untuk pengujian upgrade.
 
@@ -178,11 +178,11 @@ Sesudah fork/push disetujui:
 Alternatif CLI, setelah otorisasi publikasi:
 
 ```powershell
-gh workflow run publish-images.yml --repo amulyawan/ns8-vikunja-build --ref vikunja-2.8.0 -f image_tag=2.8.0-rc.2
+gh workflow run publish-images.yml --repo amulyawan/ns8-vikunja-build --ref vikunja-2.8.0 -f image_tag=2.8.0-rc.5
 gh run list --repo amulyawan/ns8-vikunja-build --limit 10
 ```
 
-Hasil yang diharapkan: `ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2`.
+Hasil yang diharapkan: `ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5`.
 Modul NS8 ini adalah image paket berbasis scratch; pemeriksaan keamanan image
 paket saja tidak memeriksa aplikasi. Scan juga image Vikunja dan PostgreSQL.
 Periksa biaya/kuota Actions dan package akun sebelum penggunaan runner.
@@ -218,7 +218,7 @@ Di kedua distro, dalam repository:
 
 ```bash
 python3 tools/validate.py
-REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=2.8.0-rc.2 bash build-images.sh
+REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=2.8.0-rc.5 bash build-images.sh
 buildah inspect ghcr.io/amulyawan/ns8-vikunja-build/vikunja
 ```
 
@@ -230,7 +230,7 @@ di command line atau di repository:
 ```bash
 buildah login ghcr.io
 buildah push ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1 docker://ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1
-buildah push ghcr.io/amulyawan/ns8-vikunja-build/vikunja docker://ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2
+buildah push ghcr.io/amulyawan/ns8-vikunja-build/vikunja docker://ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5
 buildah logout ghcr.io
 ```
 
@@ -258,7 +258,7 @@ Ikuti [langkah registry dan Software Center](INSTALASI-UJI-NS8-ID.md).
 Pada shell root **node staging NS8**, ganti `1` dengan node ID yang benar:
 
 ```bash
-add-module ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2 1
+add-module ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5 1
 ```
 
 Catat `module_id` dari output. Contoh berikut mengasumsikan `vikunja1`;
@@ -336,7 +336,7 @@ Jika sudah ada instance lama:
 5. Perintah berikut hanya untuk **instance staging yang telah dimigrasikan dan diverifikasi**:
 
 ```bash
-api-cli run update-module --data '{"module_url":"ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2","instances":["vikunja1"]}'
+api-cli run update-module --data '{"module_url":"ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5","instances":["vikunja1"]}'
 ```
 
 6. Periksa konfigurasi, versi API, akses pengguna, file, SMTP, token, dan backup.
@@ -369,3 +369,11 @@ ke upstream sebagai pull request setelah pemilik menyetujuinya.
 - [NS8: manajemen modul](https://nethserver.github.io/ns8-core/modules/)
 - [Vikunja MCP](https://vikunja.io/help/mcp/)
 - [Vikunja API v2](https://vikunja.io/docs/api-v2/)
+
+## Build web dan kebijakan directory pada RC5
+
+Base image tetap resmi 2.8.0, tetapi executable web dimount dari modul, dibangun
+ulang dari source yang dipin untuk kebijakan wajib pencarian nama/email.
+`build-images.sh` membangun frontend, backend, companion LDAP, panel NS8, dan
+PostgreSQL; seluruh executable ikut scan arsip modul. Lihat
+[prosedur LDAP, teams dan Privacy](LDAP-DAN-AKSES-NS8-ID.md).

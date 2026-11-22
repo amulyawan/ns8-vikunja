@@ -27,7 +27,7 @@
     "screenshots": [],
     "versions": [
       {
-        "tag": "2.8.0-rc.4",
+        "tag": "2.8.0-rc.5",
         "testing": true,
         "labels": {
           "org.nethserver.authorizations": "traefik@node:routeadm cluster:accountconsumer",
