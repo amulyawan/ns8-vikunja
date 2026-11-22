@@ -48,10 +48,17 @@ func run() error {
 		config.AuthLdapBaseDN.GetString(), ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		5000, 20, false, directoryFilter(config.AuthLdapUserFilter.GetString()),
 		[]string{config.AuthLdapAttributeUsername.GetString(), config.AuthLdapAttributeEmail.GetString(),
-			config.AuthLdapAttributeDisplayname.GetString(), config.AuthLdapAttributeID.GetString()}, nil,
+			config.AuthLdapAttributeDisplayname.GetString(), config.AuthLdapAttributeID.GetString(), "objectSid", "primaryGroupID"}, nil,
 	), 500)
 	if err != nil {
 		return fmt.Errorf("directory search failed or exceeded the 5000-profile safety limit")
+	}
+	groups, err := native.NS8LoadDirectoryGroups(connection)
+	if err != nil {
+		return err
+	}
+	if groups.Count() == 0 && len(result.Entries) > 0 {
+		return fmt.Errorf("no directory groups visible; refusing an incomplete synchronization")
 	}
 	if *apply {
 		s := db.NewSession()
@@ -80,11 +87,16 @@ func run() error {
 		}
 		<-ready
 	}
-	counts := map[string]int{"matched": len(result.Entries)}
+	counts := map[string]int{"matched": len(result.Entries), "directory_groups": groups.Count()}
 	created := []int64{}
+	seen := map[int64]bool{}
 	for _, entry := range result.Entries {
 		s := db.NewSession()
 		state, id, problem := native.NS8ProvisionEntry(s, entry, *apply)
+		teams := groups.TeamsFor(entry)
+		if problem == nil && *apply && id != 0 {
+			problem = native.NS8SyncGroups(s, id, teams)
+		}
 		if problem == nil && *apply {
 			problem = s.Commit()
 		} else {
@@ -95,12 +107,32 @@ func run() error {
 			counts["errors"]++
 		} else {
 			counts[state]++
+			if id != 0 {
+				seen[id] = true
+			}
+			counts["directory_memberships"] += len(teams)
 			if state == "created" {
 				created = append(created, id)
 			}
 			if *apply {
 				events.DispatchPending(ctx, s)
 			}
+		}
+		events.CleanupPending(s)
+		s.Close()
+	}
+	if *apply && counts["errors"] == 0 {
+		s := db.NewSession()
+		pruned, problem := native.NS8PruneGroups(s, seen)
+		if problem == nil {
+			problem = s.Commit()
+		}
+		if problem != nil {
+			_ = s.Rollback()
+			counts["errors"]++
+		} else {
+			counts["profiles_without_directory_teams"] = pruned
+			events.DispatchPending(ctx, s)
 		}
 		events.CleanupPending(s)
 		s.Close()

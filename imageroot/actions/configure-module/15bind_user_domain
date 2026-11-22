@@ -5,9 +5,11 @@ import sys
 import agent
 
 request = json.load(sys.stdin)
-domain = request.get("user_domain", os.environ.get("LDAP_USER_DOMAIN", ""))
+previous_domain = os.environ.get("LDAP_USER_DOMAIN", "")
+domain = request.get("user_domain", previous_domain)
 agent.bind_user_domains([domain] if domain else [], check=True)
 agent.set_env("LDAP_USER_DOMAIN", domain)
 agent.set_env("LDAP_EMAIL_ATTRIBUTE", request.get("ldap_email_attribute", os.environ.get("LDAP_EMAIL_ATTRIBUTE", "mail")))
-enabled = request.get("ldap_sync_enabled", os.environ.get("LDAP_SYNC_PROFILES", "false") == "true")
+default_enabled = bool(domain) and (domain != previous_domain or os.environ.get("LDAP_SYNC_PROFILES", "false") == "true")
+enabled = request.get("ldap_sync_enabled", default_enabled)
 agent.set_env("LDAP_SYNC_PROFILES", "true" if domain and enabled else "false")

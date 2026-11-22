@@ -55,7 +55,7 @@
         },
         "ldap_sync_enabled": {
             "type": "boolean",
-            "description": "Opt in to create LDAP profiles before first login and refresh every fifteen minutes. New profiles are discoverable by name."
+            "description": "Create LDAP profiles before first login and synchronize groups to teams every fifteen minutes; new profiles are discoverable by name. Selecting a new domain enables this unless explicitly disabled."
         }
     }
 }

@@ -36,6 +36,7 @@
             <cv-select
               :label="$t('settings.user_domain')"
               v-model="userDomain"
+              @change="directorySelectionChanged"
               :disabled="loading.getConfiguration || loading.configureModule"
               :invalid-message="error.user_domain"
               class="mg-bottom"
@@ -196,6 +197,9 @@ export default {
     next();
   },
   methods: {
+    directorySelectionChanged() {
+      this.ldapSyncEnabled = !!this.userDomain;
+    },
     async getConfiguration() {
       this.loading.getConfiguration = true;
       this.error.getConfiguration = "";

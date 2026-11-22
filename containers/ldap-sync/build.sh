@@ -8,7 +8,7 @@ mkdir -p /work/api /out/licenses
 curl --fail --location --retry 3 "https://codeload.github.com/go-vikunja/vikunja/tar.gz/${source_commit}" -o /work/source.tar.gz
 echo "${source_sha}  /work/source.tar.gz" | sha256sum -c -
 tar -xzf /work/source.tar.gz -C /work/api --strip-components=1
-cp /integration/ns8_provision*.go /work/api/pkg/modules/auth/ldap/
+cp /integration/ns8_*.go /work/api/pkg/modules/auth/ldap/
 mkdir -p /work/api/cmd/ns8-ldap-sync
 cp /integration/main*.go /work/api/cmd/ns8-ldap-sync/
 cd /work/api

@@ -142,7 +142,7 @@ Referensi: [pembuatan user NS8](https://docs.nethserver.org/docs/administrator-m
 [alur LDAP Vikunja](https://vikunja.io/docs/ldap/) dan
 [API pencarian pengguna](https://try.vikunja.io/api/v1/docs).
 
-## 7. Provisioning LDAP sebelum login pertama (kandidat RC5)
+## 7. Sinkronisasi pengguna dan group LDAP (kandidat RC5)
 
 Fitur ini merupakan tambahan modul NS8, bukan perilaku bawaan Vikunja.
 Image aplikasi web tetap Vikunja resmi 2.8.0. Companion memakai model pembuatan
@@ -162,8 +162,9 @@ user dan identitas LDAP dari source versi yang sama, termasuk pemeriksaan lisens
    inisialisasi CLI standar tetap bisa menjalankan migrasi/metadata internal.
    Hasil hanya berisi jumlah `would_create`, `would_update`, `existing`, atau
    akun yang dilewati. Tidak ada password atau daftar directory dalam output.
-4. Centang **Provision LDAP users before their first login**, lalu Save.
-   Modul menjalankan provisioning pertama dan timer setiap sekitar 15 menit.
+4. Centang **Automatically sync LDAP users and groups as teams**, lalu Save.
+   Pemilihan domain baru mengaktifkan checkbox ini; periksa sebelum Save.
+   Modul menjalankan provisioning/sinkronisasi pertama dan timer sekitar 15 menit.
    API setara adalah `ldap_sync_enabled: true` pada `configure-module`.
 5. Periksa status dari node:
 
@@ -182,16 +183,38 @@ diambil alih. Pencarian dibatasi 5.000 hasil agar scope tak sengaja terlalu luas
 gagal dengan aman. GUID AD dipakai seperti login native agar tidak membuat
 profil kedua ketika pengguna akhirnya login.
 
-Profil baru memiliki Inbox pribadi, tanpa password lokal, tanpa hak admin dan
-tanpa keanggotaan tim otomatis. Nama profil baru dapat dicari oleh pengguna
+Profil baru memiliki Inbox pribadi, tanpa password lokal dan tanpa hak admin.
+Keanggotaan team mengikuti group directory, termasuk primary group AD dan
+group bertingkat. Nama profil baru dapat dicari oleh pengguna
 Vikunja yang login; ini adalah dampak privasi yang disetujui lewat checkbox.
 Pilihan discoverability dan status disabled pada profil yang sudah ada dijaga.
-Sinkronisasi hanya memperbarui nama/email dari AD. Tidak menulis ke AD, tidak
-membuat mailbox, tidak menyinkronkan grup, dan tidak menghapus akun yang hilang
-dari directory. Penonaktifan AD menolak login LDAP berikutnya, tetapi fitur ini
-bukan pencabutan sesi aktif; gunakan kontrol sesi jika perlu penonaktifan segera.
+Sinkronisasi memperbarui nama/email serta keanggotaan directory team. Tidak
+menulis ke AD, tidak membuat mailbox, dan tidak menghapus profil yang hilang
+dari directory. Keanggotaan directory team yang tidak lagi ada akan dicabut pada
+sinkronisasi berikutnya, termasuk untuk profil yang tidak lagi memenuhi filter
+directory. Proses ini bukan pencabutan seluruh sesi aktif; gunakan kontrol sesi
+jika perlu penonaktifan segera.
 
-Untuk berhenti, hapus centang dan Save. Profil yang sudah dibuat tetap tersedia.
+Group menjadi external team dengan nama `Nama Group (LDAP)`, mengikuti format
+native Vikunja agar asal directory terlihat. Identitas team memakai GUID group,
+sehingga rename AD memperbarui team yang sama. Group tanpa anggota aktif yang
+memenuhi syarat tidak dibuat sebagai team kosong. Membership, nama, dan deskripsi
+external team dikelola dari AD. Tim manual yang telah ada tidak diambil alih,
+sekalipun memiliki nama yang mirip. Tanpa LDAP, teams dikelola manual.
+
+Project tidak dibuat dari group AD. Selain Inbox standar per pengguna, project
+dibuat langsung di Vikunja. Hak akses project dapat diberikan ke external team
+secara eksplisit; setelah itu keanggotaan AD menentukan siapa yang mendapat
+akses lewat team tersebut. Perubahan anggota AD tidak menambah hak admin project.
+
+Untuk hasil konsisten termasuk primary/nested group, modul memakai snapshot
+companion sebagai satu sumber sinkronisasi. `auth.ldap.groupsyncenabled` native
+tetap false agar sinkronisasi saat login tidak menimpa membership snapshot yang
+lebih lengkap. Ini bukan berarti sinkronisasi team modul dinonaktifkan.
+
+Untuk berhenti, hapus centang dan Save. Profil/team yang sudah dibuat tetap
+tersedia, dan membership terakhir tidak lagi diperbarui. Jangan menghentikan
+sinkronisasi jika mengandalkannya untuk pencabutan akses team dari AD.
 Manifest ID yang dibuat disimpan privat dalam `ldap-profile-sync-created.json`
 dan ikut backup; jangan unggah file tersebut. Jika perlu rollback sesudah dipakai,
 utamakan menonaktifkan akun yang ditinjau melalui CLI native, bukan menghapus
