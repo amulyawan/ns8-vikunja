@@ -1,7 +1,10 @@
 # Mengubah anggota group AD dari Vikunja
 
-Status: fitur kandidat RC6; hasil penerapan aktual dicatat di
-[VALIDATION.md](VALIDATION.md). RC5 hanya menyinkronkan AD ke Vikunja.
+Status: RC6 sudah dibangun, dipindai, dipublikasikan privat dan dipasang pada
+instance uji NS8. Panel UI sudah terverifikasi; pemeriksaan izin dan perubahan
+AD nyata dengan password pengguna masih menunggu uji interaktif pemilik.
+Lihat [hasil validasi dan batas pengujian](VALIDATION.md).
+RC5 hanya menyinkronkan AD ke Vikunja.
 
 ## Hak yang dipakai
 

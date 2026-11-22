@@ -1,7 +1,7 @@
 # Instalasi uji Vikunja pada NS8 dan pembaruan melalui web UI
 
 Dokumen terpisah dari panduan pembuatan modul. Target kandidat: Vikunja 2.8.0,
-PostgreSQL 19.0, modul `2.8.0-rc.5`. Instalasi baru dan update kandidat pada NS8
+PostgreSQL 19.0, modul `2.8.0-rc.6`. Instalasi baru dan update kandidat pada NS8
 aktual lulus pada 22 November 2026. Nilai token asli dan informasi infrastruktur
 pemilik berada dalam dokumentasi lokal privat, pada bagian token step-by-step.
 
@@ -55,7 +55,7 @@ printf '%s' "$registry_token" | podman login --authfile "$authfile" \
   --username amulyawan --password-stdin ghcr.io/amulyawan/ns8-vikunja-build
 unset registry_token
 chmod "$authmode" "$authfile"
-podman pull ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5
+podman pull ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.6
 ```
 
 Token diketik pada prompt tersembunyi, bukan ditempel sebagai perintah. Jika
@@ -301,3 +301,14 @@ manifest ID privat, kebijakan Privacy, dan batas pengelolaan project.
 Restore native end-to-end sebelumnya diuji pada RC2. Restore ulang RC5 sesudah
 penambahan data LDAP/team belum dijalankan; jangan menganggap uji sebelumnya
 sebagai bukti semua konfigurasi LDAP RC5 sudah diuji restore.
+
+
+## 13. Pengelolaan anggota directory pada RC6
+
+RC6 sudah lulus build, tiga scan, dan update pada NS8 aktual setelah backup baru.
+Panel Teams dan pilihan mail pada NS8 sudah diverifikasi di browser. Langkah
+pemeriksaan izin, tambah/hapus anggota langsung, serta pemulihan ada di
+[ADMIN-GROUP-AD-ID.md](ADMIN-GROUP-AD-ID.md). Password AD dimasukkan sendiri oleh
+pengguna di web UI; jangan menaruhnya dalam dokumen atau konfigurasi.
+Uji perubahan AD nyata dengan akun pemilik masih menunggu interaksi pemilik;
+lihat batas bukti terkini pada [VALIDATION.md](VALIDATION.md).

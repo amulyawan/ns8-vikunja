@@ -211,3 +211,47 @@ binary. Current directory synchronization is read-only. Authorized AD membership
 changes from Vikunja UI are the next, separate scope; projects remain independent.
 The prior native restore test was RC2; a new full RC5 LDAP/team restore has not
 been run. No real import job, SMTP delivery or legacy 1.1.0 migration is claimed.
+
+
+## RC6 directory membership administration
+
+[Run 44981854210](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44981854210)
+built, tested, scanned and privately published `2.8.0-rc.6` from source `c4131d3`.
+Module digest: `sha256:950793fda6bab67dc41ea3f65b3a31f259e44195449a8f89c973df84039c37a9`.
+The source suite passed 32 tests. Pinned native LDAP tests exercise actor rebind,
+ACL denial, identity replacement, single-member add/remove, recovery-before-write,
+and rejection of incomplete ranged data. Six API guard tests and four frontend
+behavior tests passed; frontend typecheck/build passed. CI's real PostgreSQL 19
+smoke verifies the namespace authentication boundary, ordinary local team creation,
+mandatory discovery and transaction-lock/durable-intent behavior. Fresh-schema
+initialization and migration both create recovery storage and unique identity guards.
+The test-only storage executable is excluded from the published module.
+
+A fresh native backup preceded the actual scoped NS8 update. The running image
+digest matches the published candidate. Existing identity/status/admin values,
+project/task/attachment IDs, teams and memberships exactly matched the immediate
+pre-update baseline. An independent fresh directory snapshot still matched all
+LDAP memberships, including primary and nested groups. Repeat sync did not create
+duplicates. Secrets and attachment checksum were preserved; other module versions
+and digests were unchanged. Timer, closed local registration/login and disabled
+instance SMTP remain as before. The recovery journal was empty before human testing.
+
+The authenticated browser rendered the new Manage directory group members panel
+on Teams, without the ordinary local Create Team action in LDAP mode. NS8 settings
+now visibly select mail, the chosen native domain, enabled synchronization and the
+existing HTTPS/network policy. Screenshots and target-specific evidence stay local.
+No configuration-save round trip was needed to verify the selector display.
+
+The feature reauthenticates the current AD user for every authorization/write;
+TeamAdmin, NS8 admin or global Vikunja admin flags confer no directory authority.
+Only direct membership is mutable. Projects remain independently managed. API
+and MCP tokens cannot call the directory administration namespace. Recovery intent
+is durable before LDAP Modify, without any password. Directory and application
+storage are not one transaction; uncertain/refresh-pending outcomes are explicit.
+
+Actual owner-credential permission discovery and production AD add/remove from
+this panel are still awaiting the owner's interactive test. No production group
+membership has been changed by the agent. Synthetic tests are not presented as
+proof of a real actor's directory ACL. The earlier full native restore was RC2;
+a full RC6 LDAP/journal restore, SMTP delivery, real import and legacy 1.1.0 data
+migration have not been tested. See [the administration runbook](ADMIN-GROUP-AD-ID.md).

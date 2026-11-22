@@ -27,14 +27,14 @@ python3 tools/validate.py
 On a Linux development host with Buildah/Podman:
 
 ```bash
-REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=2.8.0-rc.5 bash build-images.sh
+REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=2.8.0-rc.6 bash build-images.sh
 ```
 
 The manual `Publish images` workflow completed successfully in private run
 44975299796. The owner-only candidate is published at
-`ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5` with the private
+`ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.6` with the private
 database runtime `ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1`.
-Both packages passed the before/after privacy checks. Current RC5 build/scan run: [44975299796](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44975299796).
+Both packages passed the before/after privacy checks. Current RC6 build/scan run: [44981854210](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44981854210).
 Fresh NS8 installation, scoped MCP, attachment/restart persistence, native backup/restore and Software Center RC1→RC2 update passed on NS8 3.25.1.
 See the [separate installation guide](docs/INSTALASI-UJI-NS8-ID.md) for the catalog URL and private-registry authentication. Trusted HTTPS and owner AD login were verified. Legacy data migration and actual SMTP delivery remain untested.
 
@@ -43,7 +43,7 @@ See the [separate installation guide](docs/INSTALASI-UJI-NS8-ID.md) for the cata
 Only after image publication, prerequisite checks and a verified rollback source:
 
 ```bash
-add-module ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5 1
+add-module ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.6 1
 ```
 
 Use the returned module ID, actual node ID, DNS and trusted TLS certificate.
@@ -64,12 +64,11 @@ configuration are available in Settings. Directory-only mode disables prior loca
 accounts through the supported CLI with recovery metadata, preserving their data.
 See the [LDAP/access/account guide](docs/LDAP-DAN-AKSES-NS8-ID.md).
 
-RC5 provisions LDAP profiles before first login and maps primary/nested directory groups
-to external teams on a fifteen-minute timer. Both discovery Privacy controls are
-mandatory in UI and API. Directory-membership writeback from the UI is a separate
-follow-up; RC5 directory access is read-only.
+The module provisions LDAP profiles before first login and maps primary/nested
+directory groups to external teams on a fifteen-minute timer. Both discovery
+Privacy controls are mandatory in UI and API.
 
-The RC6 candidate adds actor-authorized directory membership changes from Teams,
+RC6 adds actor-authorized directory membership changes from Teams,
 with fresh LDAP credential confirmation, recovery records, and independent
 project management. See the [AD group administration runbook](docs/ADMIN-GROUP-AD-ID.md)
 for authorization, primary/inherited membership, and validation limits.
