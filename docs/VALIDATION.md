@@ -249,8 +249,10 @@ and MCP tokens cannot call the directory administration namespace. Recovery inte
 is durable before LDAP Modify, without any password. Directory and application
 storage are not one transaction; uncertain/refresh-pending outcomes are explicit.
 
-Actual owner-credential permission discovery and production AD add/remove from
-this panel are still awaiting the owner's interactive test. No production group
+The owner confirmed that manageable groups appeared after entering their own
+directory credentials. This confirmation is recorded as owner-reported evidence;
+the agent's separate tab did not retain that result. Production AD add/remove
+from this panel is still awaiting the owner's interactive test. No production group
 membership has been changed by the agent. Synthetic tests are not presented as
 proof of a real actor's directory ACL. The earlier full native restore was RC2;
 a full RC6 LDAP/journal restore, SMTP delivery, real import and legacy 1.1.0 data

@@ -1,8 +1,9 @@
 # Mengubah anggota group AD dari Vikunja
 
 Status: RC6 sudah dibangun, dipindai, dipublikasikan privat dan dipasang pada
-instance uji NS8. Panel UI sudah terverifikasi; pemeriksaan izin dan perubahan
-AD nyata dengan password pengguna masih menunggu uji interaktif pemilik.
+instance uji NS8. Panel UI sudah terverifikasi. Pemilik mengonfirmasi bahwa
+group muncul setelah pemeriksaan izin dengan password sendiri. Perubahan
+anggota AD nyata masih menunggu uji interaktif pemilik.
 Lihat [hasil validasi dan batas pengujian](VALIDATION.md).
 RC5 hanya menyinkronkan AD ke Vikunja.
 
@@ -24,6 +25,19 @@ Tidak ada password admin bawaan atau akun bind bersama yang diberi hak tulis.
 Gunakan password **akun AD Anda sendiri**, bukan password admin NS8. Password
 dipakai dalam permintaan terkait dan tidak disimpan dalam konfigurasi, database,
 atau catatan pemulihan modul. Antarmuka mengosongkan field setelah permintaan.
+
+### Mengapa password diminta berulang?
+
+Ini pilihan implementasi RC6, bukan kewajiban umum Vikunja atau LDAP. Login
+Vikunja memberi token sesi aplikasi; token itu bukan kredensial untuk bind LDAP.
+RC6 tidak menyimpan password AD untuk dipakai kembali. Karena itu pemeriksaan
+daftar group dan setiap perubahan anggota membuat bind baru dengan password
+yang dimasukkan pada permintaan tersebut. Setelah memuat group, pengguna
+memasukkan password lagi saat mengonfirmasi Add/Remove.
+
+Mengurangi pengisian berulang memerlukan perubahan rancangan otorisasi atau
+pengelolaan kredensial sementara. RC6 belum menyediakan sesi pengelolaan AD
+yang cukup dikonfirmasi satu kali.
 
 ## Langkah menambah anggota
 
@@ -64,6 +78,17 @@ Perubahan hanya menambah/menghapus satu nilai `member` atau `memberUid`, sehingg
 anggota lain tidak diganti dengan hasil snapshot lama. Group dan user diperiksa
 dengan identitas stabil sebelum menulis. Group baru, rename, dan penghapusan
 group tetap dilakukan melalui administrasi directory.
+
+Menghapus anggota hanya mengeluarkan user dari group; akun AD, mailbox dan
+profil Vikunja tidak dihapus.
+
+## Menghapus group
+
+RC6 tidak menyediakan penghapusan group AD melalui Vikunja. Lakukan melalui
+administrasi Samba AD/LDAP dengan akun yang berhak menghapus group. Ini
+menghapus group directory yang dapat dipakai aplikasi lain, bukan sekadar team
+lokal. Periksa pemakaian dan akses project yang diberikan melalui group tersebut.
+Jangan memakai tombol penghapusan team lokal untuk menghapus group AD.
 
 ## Teams, projects, dan mode lokal
 
