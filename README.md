@@ -27,21 +27,23 @@ python3 tools/validate.py
 On a Linux development host with Buildah/Podman:
 
 ```bash
-REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=vikunja-2.8.0 bash build-images.sh
+REPOBASE=ghcr.io/amulyawan/ns8-vikunja-build IMAGETAG=2.8.0-rc.2 bash build-images.sh
 ```
 
 The manual `Publish images` workflow completed successfully in private run
-44959585748. The owner-only candidate is published at
-`ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0` with the private
+44963956861. The owner-only candidate is published at
+`ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2` with the private
 database runtime `ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1`.
-Both packages passed the before/after privacy checks. NS8 acceptance is pending.
+Both packages passed the before/after privacy checks. Current RC2 build/scan run: [44963956861](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44963956861).
+Fresh NS8 installation, scoped MCP, attachment/restart persistence, native backup/restore and Software Center RC1→RC2 update passed on NS8 3.25.1.
+See the [separate installation guide](docs/INSTALASI-UJI-NS8-ID.md) for the catalog URL and private-registry authentication. Legacy data migration and production TLS/mail remain untested.
 
 ## Install on an approved NS8 staging node
 
 Only after image publication, prerequisite checks and a verified rollback source:
 
 ```bash
-add-module ghcr.io/amulyawan/ns8-vikunja-build/vikunja:vikunja-2.8.0 1
+add-module ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2 1
 ```
 
 Use the returned module ID, actual node ID, DNS and trusted TLS certificate.

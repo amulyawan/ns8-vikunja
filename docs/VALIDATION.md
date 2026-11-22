@@ -7,24 +7,29 @@ Target: Vikunja 2.8.0 in an NS8 module. This is a development candidate.
 | Gate | Required evidence | Status |
 | --- | --- | --- |
 | Source checks | `python3 tools/validate.py` and clean diff | 17 tests cover module, PostgreSQL major guard and private-registry policies; see current CI result |
-| NS8 settings frontend | Immutable Yarn install and production build | Passed locally on Windows Node 24.17.0; inherited peer/deprecation/bundle-size warnings; Linux Node 26 build still pending |
-| Package build | Successful Buildah module build; image labels contain Vikunja 2.8.0 | Passed on private Linux runner, run 44959585748 |
-| Container scans | Trivy output for module **and service images** | Module, Vikunja and patched PostgreSQL 19 all passed HIGH/CRITICAL gate, run 44959585748 |
-| Private publication | Package API visibility after push | Both final packages verified private, run 44959585748 |
+| NS8 settings frontend | Immutable Yarn install and production build | Passed locally on Windows Node 24.17.0 and in Linux Node 26.13.0 image build (RC2); inherited peer/deprecation/bundle-size warnings remain |
+| Package build | Successful Buildah module build; image labels contain Vikunja 2.8.0 | Passed on private Linux runner, current RC2 run 44963956861 |
+| Container scans | Trivy output for module **and service images** | Module, Vikunja and patched PostgreSQL 19 all passed HIGH/CRITICAL gate, current RC2 run 44963956861 |
+| Private publication | Package API visibility after push | Both final packages verified private, current RC2 run 44963956861 |
 | Application + PostgreSQL 19 | Synthetic user/project/task, restart, dump/restore | Passed in disposable Podman pod, run 44959585748 |
-| Fresh NS8 install | Configure, frontend, API v2 version, database health, restart | Pending staging NS8 |
-| MCP | Anonymous rejection plus authenticated initialize/tools/list with scoped token | Pending staging NS8 |
-| Application flows | Two synthetic users, projects, tasks, comments, sharing, attachment upload/download | Pending staging NS8 |
-| Persistence | Same synthetic records and attachments after restart | Pending staging NS8 |
+| Fresh NS8 install | Configure, frontend, API v2 version, database health, restart | Passed on NS8 3.25.1 / Rocky 9.8 / Podman 5.8.2 / SELinux Enforcing |
+| MCP | Anonymous rejection, scoped initialize/tools/list/tasks_read, write denial | Passed on actual NS8; disposable MCP token revoked |
+| Application flows | Two synthetic users, projects/tasks, attachment upload/download and access denial | Passed for login/CRUD/attachments and cross-user denial; comments/sharing remain untested |
+| Persistence | Same synthetic records and attachment checksum after restart and web update | Passed on actual NS8 |
 | Upgrade | Real 1.1.0 synthetic PostgreSQL dataset migrated to 2.8.0 | Pending staging NS8 |
-| Backup/restore | Restore NS8 backup into separate instance; compare users, tasks, files, stable secret | Pending staging NS8 |
+| Backup/restore | Native NS8 backup into a separate restored instance; compare login/task/file/DB credentials/secret | Passed; original retained, restore copy removed after verification |
 | Mail | Change smarthost; restart; verify real test delivery and TLS mode | Pending staging NS8 |
-| Rollback | Restore pre-upgrade snapshot/backup and previous application version | Pending staging NS8 |
+| Rollback | Restore pre-update RC1 backup to separate instance while source runs RC2 | Passed for this candidate update; legacy 1.1.0 rollback remains untested |
+| Software Center | Private package pull and RC1→RC2 update from browser | Passed; synthetic data and identity preserved |
+| Catalog logo | Rendered Applications image loads with correct dimensions | Passed, 256×256; fixed duplicated app directory in URL |
 
 The Robot suite has been extended with API v2 version/health and anonymous MCP
 rejection, but has not run on NS8. It does not prove upgrade, backup/restore, or
 authenticated MCP. Never use it as the only production acceptance criterion.
-No production instance has been accessed.
+The existing NS8 node was accessed for a separate synthetic test application.
+The 17 pre-existing module versions and digests were unchanged; no failed root
+systemd units were present at final verification. Test routing stays loopback
+allowlisted and outbound mail is disabled for the test instance.
 
 The official Linux amd64 2.8.0 release binary was downloaded from GitHub Releases
 and its archive SHA-256 matched the published asset digest:
@@ -82,12 +87,11 @@ because it was pinned by the original integration.
 
 The candidate CI now tests Vikunja 2.8.0 against PostgreSQL 19.0: automatic schema
 migrations, registration/login, project/task creation, restart persistence,
-database dump/restore, frontend/API health and anonymous MCP rejection. Full NS8
-backup/restore, authenticated MCP and migration of an existing instance remain
-separate staging gates. See https://vikunja.io/docs/installing/ and
+database dump/restore, frontend/API health and anonymous MCP rejection. Actual NS8 backup/restore and authenticated MCP have now passed. Migration of
+an existing legacy instance remains a separate staging gate. See https://vikunja.io/docs/installing/ and
 https://www.postgresql.org/about/news/postgresql-19-released-3449/ .
 
-## Final candidate publication
+## Earlier candidate publication (superseded tag)
 
 [Private run 44959585748](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44959585748)
 successfully built commit `1b0e402` with Vikunja 2.8.0 and PostgreSQL 19.0.
@@ -101,4 +105,37 @@ this is not a statement that all severities or host-kernel risks are absent.
 The first PostgreSQL 19 test had already passed initialization and application
 CRUD, then failed because it restarted the application before the database.
 The corrected test restarts PostgreSQL, waits for readiness, then restarts Vikunja.
-No NS8 host has been modified. NS8 staging acceptance is still required.
+That run preceded the actual NS8 installation described below.
+
+
+## Actual NS8 acceptance and RC2 — 22 November 2026
+
+[RC1 run 44962299371](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44962299371)
+fixed the NS8 image environment variable (`VIKUNJA_POSTGRES_IMAGE`) and introduced
+a semantic module tag. A clean normal add-module/configure succeeded using the
+native node registry authfile. Login/project/task/attachment and restart passed.
+A second user was denied access to the first user's task and attachment.
+
+Native NS8 backup was restored using cluster restore-module, `replace:false`,
+into a separate agent. Login, task, attachment SHA-256, database credentials and
+Vikunja service secret matched. Both test routes were loopback allowlisted and
+mail disabled. The restore copy was removed after verification; backup retained.
+The test-only backup job is disabled. Existing production backup configuration
+was not edited or run by this test.
+
+[RC2 run 44963956861](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44963956861)
+built/scanned/published the next private candidate. The browser Software Center
+offered RC2 and successfully updated the original test instance from RC1. Task,
+attachment checksum, database credentials and secret survived the update.
+
+- Module: `ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2`
+- Module digest: `sha256:e7c1d9fd78a38e33f0ba69fa0429490961d1beb6d2c3d87d5739866fd8f07a23`
+- Application: Vikunja 2.8.0; database: patched PostgreSQL 19.0.
+- Software Center catalog and rendered 256px logo verified in the browser.
+- MCP initialize, tools/list and tasks_read passed; read-only API token write
+  was denied. Each disposable MCP token was revoked after the test.
+- Private evidence, token value, screenshots and target topology remain local.
+
+This accepts the tested fresh-install and candidate-update scope. It does not
+claim legacy 1.1.0 data migration, production TLS/DNS, actual mail delivery,
+comments/sharing flows, node reboot or all-severity vulnerability freedom.
