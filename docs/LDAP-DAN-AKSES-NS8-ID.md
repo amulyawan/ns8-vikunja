@@ -145,8 +145,10 @@ Referensi: [pembuatan user NS8](https://docs.nethserver.org/docs/administrator-m
 ## 7. Sinkronisasi pengguna dan group LDAP (kandidat RC5)
 
 Fitur ini merupakan tambahan modul NS8, bukan perilaku bawaan Vikunja.
-Image aplikasi web tetap Vikunja resmi 2.8.0. Companion memakai model pembuatan
-user dan identitas LDAP dari source versi yang sama, termasuk pemeriksaan lisensi.
+Base container memakai image resmi 2.8.0. Executable web dibangun ulang dari
+source 2.8.0 yang dipin, dengan patch kebijakan discoverability di bagian 8,
+dan dimount baca-saja dari modul. Companion memakai model pembuatan user dan
+identitas LDAP dari source yang sama, termasuk pemeriksaan lisensi.
 
 1. Buat backup NS8 untuk instance ini dan pastikan backup benar-benar menghasilkan
    snapshot. Sediakan kapasitas database untuk user dan Inbox yang akan dibuat.
@@ -158,8 +160,10 @@ user dan identitas LDAP dari source versi yang sama, termasuk pemeriksaan lisens
    runagent -m vikunja1 sync-ldap-profiles --dry-run
    ```
 
-   Ganti `vikunja1` dengan instance aktual. Ini tidak membuat atau mengubah profil;
-   inisialisasi CLI standar tetap bisa menjalankan migrasi/metadata internal.
+   Ganti `vikunja1` dengan instance aktual. Fase provisioning tidak membuat atau
+   mengubah profil LDAP. Jalankan setelah web berhasil start: inisialisasi CLI
+   juga dapat menjalankan migrasi yang tertunda, termasuk kebijakan privasi wajib
+   pada build ini. Dry-run ini bukan jaminan seluruh database baca-saja.
    Hasil hanya berisi jumlah `would_create`, `would_update`, `existing`, atau
    akun yang dilewati. Tidak ada password atau daftar directory dalam output.
 4. Centang **Automatically sync LDAP users and groups as teams**, lalu Save.
@@ -186,8 +190,8 @@ profil kedua ketika pengguna akhirnya login.
 Profil baru memiliki Inbox pribadi, tanpa password lokal dan tanpa hak admin.
 Keanggotaan team mengikuti group directory, termasuk primary group AD dan
 group bertingkat. Nama profil baru dapat dicari oleh pengguna
-Vikunja yang login; ini adalah dampak privasi yang disetujui lewat checkbox.
-Pilihan discoverability dan status disabled pada profil yang sudah ada dijaga.
+Vikunja yang login. Nama dan email lengkap mengikuti kebijakan wajib bagian 8;
+status disabled pada profil yang sudah ada tetap dijaga.
 Sinkronisasi memperbarui nama/email serta keanggotaan directory team. Tidak
 menulis ke AD, tidak membuat mailbox, dan tidak menghapus profil yang hilang
 dari directory. Keanggotaan directory team yang tidak lagi ada akan dicabut pada
@@ -224,3 +228,29 @@ setelah meninjau perubahan pengguna sejak snapshot.
 Companion menambah indeks unik parsial `ns8_ldap_identity_unique` pada identitas
 LDAP untuk menjaga konsistensi dengan login pertama yang berbarengan. Versi
 aplikasi harus tepat 2.8.0; upgrade versi Vikunja harus menguji ulang companion.
+
+## 8. Kebijakan wajib pencarian nama dan email lengkap
+
+Pemilik instance menetapkan bahwa semua profil dapat dicari melalui nama dan
+email lengkap, termasuk pengguna lama, baik mode LDAP maupun akun lokal.
+Ini menggantikan perilaku Vikunja bawaan yang membolehkan user menolak pencarian.
+
+Build turunan `2.8.0-ns8.1` melakukan tiga hal:
+
+- Migrasi satu kali mengaktifkan `discoverable_by_name` dan
+  `discoverable_by_email` pada profil yang sudah ada.
+- Jalur pembuatan dan pembaruan user memaksa kedua nilai tetap true, termasuk
+  jika klien API mengirim false. Pengaturan profil lain tetap dapat diubah.
+- Kedua checkbox Privacy ditampilkan aktif dan disabled, disertai keterangan
+  kebijakan organisasi. Pengguna tidak dapat mematikannya.
+
+Ini mempermudah pemilihan anggota; tidak otomatis memberi hak admin atau akses
+project. Pencarian email tetap memakai alamat lengkap, bukan sebagian alamat.
+Informasikan kebijakan ini kepada pengguna. Untuk mengubah kebijakan diperlukan
+perubahan build oleh administrator; tidak ada sakelar per pengguna.
+
+Patch berada dalam `containers/ldap-sync/apply-policy.py`; script menolak source
+jika anchor versi pin berubah. UI dan backend dibangun dari source yang sama.
+CI mengirim permintaan API false, lalu memeriksa bahwa kedua nilai tetap true
+dan pengaturan lain tidak berubah. Simpan backup sebelum migrasi; pemulihan
+pilihan privasi lama memerlukan snapshot atau catatan nilai sebelum migrasi.

@@ -40,7 +40,7 @@ func TestNS8ProvisionDryRunDoesNotCreateProfiles(t *testing.T) {
 	require.True(t, user.IsErrUserDoesNotExist(err))
 }
 
-func TestNS8ProvisionReusesNativeLDAPIdentityAndPreservesPrivacy(t *testing.T) {
+func TestNS8ProvisionReusesNativeLDAPIdentityAndEnforcesDiscovery(t *testing.T) {
 	ns8Setup(t)
 	s := db.NewSession()
 	defer s.Close()
@@ -54,6 +54,7 @@ func TestNS8ProvisionReusesNativeLDAPIdentityAndPreservesPrivacy(t *testing.T) {
 	require.Empty(t, u.Password)
 	require.False(t, u.IsAdmin)
 	require.True(t, u.DiscoverableByName)
+	require.True(t, u.DiscoverableByEmail)
 	require.NotZero(t, u.DefaultProjectID)
 	state, repeated, err := NS8ProvisionEntry(s, ns8Entry("ns8-immutable-1"), true)
 	require.NoError(t, err)
@@ -72,7 +73,8 @@ func TestNS8ProvisionReusesNativeLDAPIdentityAndPreservesPrivacy(t *testing.T) {
 	require.NoError(t, err)
 	u, err = user.GetUserWithEmail(s, &user.User{ID: id})
 	require.NoError(t, err)
-	require.False(t, u.DiscoverableByName)
+	require.True(t, u.DiscoverableByName)
+	require.True(t, u.DiscoverableByEmail)
 }
 
 func TestNS8ProvisionDoesNotEnableDisabledLDAPUser(t *testing.T) {

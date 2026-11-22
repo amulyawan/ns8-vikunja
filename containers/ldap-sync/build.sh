@@ -3,11 +3,12 @@
 set -euo pipefail
 source_commit=6e788bf87cebe50e2b8d034b213fcf94ae5449ee
 source_sha=120642eb6355871bedd1fe149af7e747c4686270d1cffb9d9c173c9b07c59217
-apk add --no-cache bash curl gcc musl-dev git
+apk add --no-cache bash curl gcc musl-dev git python3
 mkdir -p /work/api /out/licenses
 curl --fail --location --retry 3 "https://codeload.github.com/go-vikunja/vikunja/tar.gz/${source_commit}" -o /work/source.tar.gz
 echo "${source_sha}  /work/source.tar.gz" | sha256sum -c -
 tar -xzf /work/source.tar.gz -C /work/api --strip-components=1
+python3 /integration/apply-policy.py /work/api
 cp /integration/ns8_*.go /work/api/pkg/modules/auth/ldap/
 mkdir -p /work/api/cmd/ns8-ldap-sync
 cp /integration/main*.go /work/api/cmd/ns8-ldap-sync/
@@ -15,6 +16,10 @@ cd /work/api
 export CGO_ENABLED=1 GOTOOLCHAIN=local GOMAXPROCS=2 GOMEMLIMIT=1536MiB
 go test -mod=readonly ./cmd/ns8-ldap-sync ./pkg/modules/auth/ldap -run 'Test(NS8|DirectoryFilter)'
 go build -mod=readonly -trimpath -ldflags='-s -w -linkmode external -extldflags "-static"' -o /out/ns8-ldap-sync ./cmd/ns8-ldap-sync
+if [[ "${SKIP_FRONTEND_SOURCE:-0}" != 1 ]]; then
+  mkdir -p /out/frontend
+  cp -a /work/api/frontend/. /out/frontend/
+fi
 cp LICENSE /out/licenses/Vikunja-AGPL-3.0.txt
 cp /usr/local/go/LICENSE /out/licenses/Go-BSD-3-Clause.txt
 # Retain dependency license notices for this statically linked executable.

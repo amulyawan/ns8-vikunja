@@ -50,7 +50,7 @@
     "host_pattern": "Must be a valid fully qualified domain name",
     "host_format": "Must be a valid fully qualified domain name",
     "ldap_sync_profiles": "Automatically sync LDAP users and groups as teams",
-    "ldap_sync_help": "Creates profiles before first login and refreshes team membership every 15 minutes, including primary and nested AD groups. New profiles can be searched by name. Directory teams follow AD; projects remain managed in Vikunja. Local account mode has no directory synchronization."
+    "ldap_sync_help": "Creates profiles before first login and refreshes team membership every 15 minutes, including primary and nested AD groups. Name and full-email discovery are mandatory for this instance. Directory teams follow AD; projects remain managed in Vikunja. Local account mode has no directory synchronization."
   },
   "about": {
     "title": "About"

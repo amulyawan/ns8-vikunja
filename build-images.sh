@@ -22,11 +22,10 @@ vikunja_version=2.8.0
 # Latest stable database for fresh installs, with patched helper/base packages.
 postgres_image="${repobase}/vikunja-postgres:19.0-ns8.1"
 buildah bud --tag "${postgres_image}" --file containers/postgres/Containerfile containers/postgres
-# Build a version-pinned LDAP companion; the official web image stays unchanged.
+# Build the pinned companion and documented organization-policy executable.
 mkdir -p .local/ldap-sync-out
 ldap_builder=$(buildah from --volume "${PWD}/containers/ldap-sync:/integration:ro,Z" --volume "${PWD}/.local/ldap-sync-out:/out:Z" docker.io/library/golang:1.27.4-alpine3.24@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280)
 buildah run "${ldap_builder}" sh -c 'apk add --no-cache bash && bash /integration/build.sh'
-buildah rm "${ldap_builder}"
 # Create a new empty container image
 container=$(buildah from scratch)
 
@@ -36,6 +35,14 @@ if ! buildah containers --format "{{.ContainerName}}" | grep -q nodebuilder-viku
 	buildah from --name nodebuilder-vikunja -v "${PWD}:/usr/src:Z" docker.io/library/node:26.13.0-slim
 	buildah run nodebuilder-vikunja sh -c "npm install -g corepack@${corepack_version} && corepack enable"
 fi
+
+echo "Build Vikunja frontend with the documented organization policy..."
+buildah run --workingdir=/usr/src/.local/ldap-sync-out/frontend \
+    --env=PUPPETEER_SKIP_DOWNLOAD=true --env=CYPRESS_INSTALL_BINARY=0 \
+    --env=NODE_OPTIONS=--max-old-space-size=4096 nodebuilder-vikunja \
+    sh -c 'pnpm install --frozen-lockfile && pnpm run build'
+buildah run "${ldap_builder}" bash /integration/web-build.sh
+buildah rm "${ldap_builder}"
 
 echo "Build static UI files with node..."
 buildah run \
@@ -47,6 +54,7 @@ buildah run \
 # Add imageroot directory to the container image
 buildah add "${container}" imageroot /imageroot
 buildah add "${container}" .local/ldap-sync-out/ns8-ldap-sync /imageroot/bin/ns8-ldap-sync
+buildah add "${container}" .local/ldap-sync-out/vikunja /imageroot/bin/vikunja-policy
 buildah add "${container}" .local/ldap-sync-out/licenses /imageroot/share/ldap-sync-licenses
 buildah add "${container}" ui/dist /ui
 # Setup the entrypoint, ask to reserve one TCP port with the label and set a rootless container

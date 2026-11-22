@@ -53,10 +53,15 @@ Integration source is AGPL-3.0-or-later, commercially usable subject to its sour
 and notice obligations. The public repository supplies the integration source
 and reproducible build script; the pinned upstream source is available from
 [Vikunja](https://github.com/go-vikunja/vikunja/tree/6e788bf87cebe50e2b8d034b213fcf94ae5449ee).
-The official Vikunja web executable/image is not patched. Native license checks
-are retained; the companion does not enable Pro features or grant global admin.
+The official image remains the container base, but its executable is overlaid
+with a reproducible source build carrying the documented mandatory name/email
+discovery policy in `apply-policy.py`. The Vue frontend has both controls locked;
+creation/update models and a one-time migration enforce the same policy.
+Native license checks are retained; this does not enable Pro features or grant
+global admin. No new frontend dependency is added; the upstream immutable pnpm
+lockfile and its commercially usable open-source dependency set are reused.
 Go and dependency notices are included under `share/ldap-sync-licenses` in the
-module image. The module archive scan includes this static Go executable.
+module image. The module archive scan includes both static Go executables.
 
 Keep the upstream UI lockfile and immutable install. Review its full dependency
 license report/SBOM before production, including image base packages. Scan both

@@ -72,7 +72,7 @@ class DirectoryAuthentication(unittest.TestCase):
                          "synthetic-rotated-value")
 
     def test_no_domain_keeps_existing_local_auth_defaults(self):
-        self.assertEqual(self.discover(""), {"VIKUNJA_AUTH_LDAP_ENABLED": "false"})
+        self.assertEqual(self.discover("")["VIKUNJA_AUTH_LDAP_ENABLED"], "false")
 
     def test_upn_email_mapping_and_stable_ad_identity(self):
         with patch.dict(os.environ, {"LDAP_EMAIL_ATTRIBUTE": "userPrincipalName"}):
@@ -81,13 +81,11 @@ class DirectoryAuthentication(unittest.TestCase):
         self.assertEqual(config["VIKUNJA_AUTH_LDAP_ATTRIBUTE_ID"], "objectGUID")
         self.assertIn("(userPrincipalName=%[1]s)", config["VIKUNJA_AUTH_LDAP_USERFILTER"])
 
-    def test_provisioning_discoverability_is_opt_in_and_requires_domain(self):
-        ordinary = self.discover("ad.example.org")
-        self.assertNotIn("VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME", ordinary)
-        with patch.dict(os.environ, {"LDAP_SYNC_PROFILES": "true"}):
-            opted_in = self.discover("ad.example.org")
-            self.assertEqual(opted_in["VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME"], "true")
-            self.assertEqual(self.discover(""), {"VIKUNJA_AUTH_LDAP_ENABLED": "false"})
+    def test_mandatory_name_and_email_discovery_in_both_auth_modes(self):
+        for domain in ("", "ad.example.org"):
+            config = self.discover(domain)
+            self.assertEqual(config["VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME"], "true")
+            self.assertEqual(config["VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_EMAIL"], "true")
 
     def test_runtime_can_reach_native_proxy_and_loads_generated_auth_last(self):
         pod = (ROOT / "imageroot/systemd/user/vikunja.service").read_text()
