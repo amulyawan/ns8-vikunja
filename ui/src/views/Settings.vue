@@ -46,6 +46,11 @@
               </cv-select-option>
             </cv-select>
             <p class="mg-bottom">{{ $t('settings.user_domain_help') }}</p>
+            <cv-select v-if="userDomain" :label="$t('settings.ldap_email_attribute')" v-model="ldapEmailAttribute"
+              :disabled="loading.getConfiguration || loading.configureModule" class="mg-bottom">
+              <cv-select-option value="mail">mail</cv-select-option>
+              <cv-select-option value="userPrincipalName">userPrincipalName (AD)</cv-select-option>
+            </cv-select>
             <cv-select :label="$t('settings.access_scope')" v-model="accessMode"
               :disabled="loading.getConfiguration || loading.configureModule" class="mg-bottom">
               <cv-select-option value="restricted">{{ $t('settings.restricted_access') }}</cv-select-option>
@@ -146,6 +151,7 @@ export default {
       urlCheckInterval: null,
       host: "",
       userDomain: "",
+      ldapEmailAttribute: "mail",
       availableUserDomains: [],
       accessMode: "restricted",
       allowedNetworks: "127.0.0.1/32",
@@ -229,6 +235,7 @@ export default {
       const config = taskResult.output;
       this.host = config.host;
       this.userDomain = config.user_domain || "";
+      this.ldapEmailAttribute = config.ldap_email_attribute || "mail";
       this.availableUserDomains = config.available_user_domains || [];
       const networks = config.ip_allowlist || ["127.0.0.1/32"];
       this.accessMode = networks.length ? "restricted" : "public";
@@ -307,6 +314,7 @@ export default {
           data: {
             host: this.host,
             user_domain: this.userDomain,
+            ldap_email_attribute: this.ldapEmailAttribute,
             ip_allowlist: this.accessMode === "public" ? [] : this.allowedNetworks.split(/[,\s]+/).filter(Boolean),
             lets_encrypt: this.isLetsEncryptEnabled,
             http2https: this.isHttpToHttpsEnabled,

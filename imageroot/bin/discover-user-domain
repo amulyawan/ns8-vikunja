@@ -30,9 +30,10 @@ if domain:
         "VIKUNJA_AUTH_LDAP_BASEDN": connection["base_dn"],
         "VIKUNJA_AUTH_LDAP_BINDDN": connection["bind_dn"],
         "VIKUNJA_AUTH_LDAP_BINDPASSWORD": connection["bind_password"],
-        "VIKUNJA_AUTH_LDAP_USERFILTER": f"(&{account}{visible}({username}=%[1]s))",
+        "VIKUNJA_AUTH_LDAP_USERFILTER": f"(&{account}{visible}(|(sAMAccountName=%[1]s)(userPrincipalName=%[1]s)))" if schema == "ad" else f"(&{account}{visible}({username}=%[1]s))",
         "VIKUNJA_AUTH_LDAP_ATTRIBUTE_USERNAME": username,
-        "VIKUNJA_AUTH_LDAP_ATTRIBUTE_EMAIL": "mail",
+        "VIKUNJA_AUTH_LDAP_ATTRIBUTE_EMAIL": os.environ.get("LDAP_EMAIL_ATTRIBUTE", "mail"),
+        "VIKUNJA_AUTH_LDAP_ATTRIBUTE_ID": "objectGUID" if schema == "ad" else "entryUUID",
         "VIKUNJA_AUTH_LDAP_ATTRIBUTE_DISPLAYNAME": "displayName",
         "VIKUNJA_AUTH_LDAP_GROUPSYNCENABLED": "false",
     })

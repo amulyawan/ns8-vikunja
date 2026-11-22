@@ -76,7 +76,7 @@ jobs:
           podman pod create --name ns8-vikunja-smoke --publish 127.0.0.1:3456:3456
           podman run --detach --pod ns8-vikunja-smoke --name pg-candidate --env POSTGRES_PASSWORD "ghcr.io/${OWNER,,}/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1"
           for i in $(seq 1 40); do
-            if podman exec pg-candidate pg_isready -U postgres; then break; fi
+            if podman exec pg-candidate pg_isready -h 127.0.0.1 -U postgres; then break; fi
             sleep 1
           done
           test "$(podman exec pg-candidate psql -U postgres -Atc 'SHOW server_version')" = 19.0
@@ -93,7 +93,7 @@ jobs:
           python3 tools/smoke.py http://127.0.0.1:3456
           podman restart pg-candidate
           for i in $(seq 1 40); do
-            if podman exec pg-candidate pg_isready -U postgres; then break; fi
+            if podman exec pg-candidate pg_isready -h 127.0.0.1 -U postgres; then break; fi
             sleep 1
           done
           podman restart vikunja-candidate

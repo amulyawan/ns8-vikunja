@@ -21,5 +21,6 @@ for evar in [
     agent.set_env(evar, original_environment[evar])
 
 agent.set_env("LDAP_USER_DOMAIN", original_environment.get("LDAP_USER_DOMAIN", ""))
+agent.set_env("LDAP_EMAIL_ATTRIBUTE", original_environment.get("LDAP_EMAIL_ATTRIBUTE", "mail"))
 agent.set_env("TRAEFIK_IP_ALLOWLIST", original_environment.get("TRAEFIK_IP_ALLOWLIST", '["127.0.0.1/32"]'))
 agent.dump_env()

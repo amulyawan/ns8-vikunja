@@ -44,6 +44,14 @@
                 "minLength": 1
             },
             "description": "Allowed client IPs/CIDRs; empty allows all IPs. Omitted preserves current policy."
+        },
+        "ldap_email_attribute": {
+            "type": "string",
+            "enum": [
+                "mail",
+                "userPrincipalName"
+            ],
+            "description": "Directory attribute for Vikunja email; UPN supports AD users lacking mail. Omitted preserves current choice."
         }
     }
 }

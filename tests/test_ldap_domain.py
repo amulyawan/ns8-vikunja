@@ -74,6 +74,13 @@ class DirectoryAuthentication(unittest.TestCase):
     def test_no_domain_keeps_existing_local_auth_defaults(self):
         self.assertEqual(self.discover(""), {"VIKUNJA_AUTH_LDAP_ENABLED": "false"})
 
+    def test_upn_email_mapping_and_stable_ad_identity(self):
+        with patch.dict(os.environ, {"LDAP_EMAIL_ATTRIBUTE": "userPrincipalName"}):
+            config = self.discover("ad.example.org")
+        self.assertEqual(config["VIKUNJA_AUTH_LDAP_ATTRIBUTE_EMAIL"], "userPrincipalName")
+        self.assertEqual(config["VIKUNJA_AUTH_LDAP_ATTRIBUTE_ID"], "objectGUID")
+        self.assertIn("(userPrincipalName=%[1]s)", config["VIKUNJA_AUTH_LDAP_USERFILTER"])
+
     def test_runtime_can_reach_native_proxy_and_loads_generated_auth_last(self):
         pod = (ROOT / "imageroot/systemd/user/vikunja.service").read_text()
         app = (ROOT / "imageroot/systemd/user/vikunja-app.service").read_text()

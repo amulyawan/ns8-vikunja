@@ -22,6 +22,7 @@
     },
     "settings": {
         "user_domain": "User domain",
+        "ldap_email_attribute": "LDAP email attribute",
         "local_accounts": "Local Vikunja accounts",
         "user_domain_help": "Selecting an NS8 domain uses its LDAP accounts and disables local login and public registration. Users need an email address in the directory.",
         "user_domain_unavailable": "The selected NS8 user domain is unavailable.",

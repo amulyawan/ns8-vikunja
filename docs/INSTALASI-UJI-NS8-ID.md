@@ -262,6 +262,12 @@ tampilan memakai `displayName`. Akun tersembunyi dan akun AD disabled keluar dar
 filter. Pengguna harus mempunyai email valid. Directory memverifikasi sandi
 pengguna; ini bukan akun admin NS8. Sinkronisasi group/team tidak otomatis aktif.
 
+Jika akun AD belum mempunyai `mail`, pilih **LDAP email attribute →
+userPrincipalName**. UPN menjadi identitas email di Vikunja, tanpa mengubah data
+AD; UPN belum tentu alamat pengiriman email yang aktif. Periksa alamat notifikasi
+sebelum mengaktifkan email nyata. Login AD menerima username atau UPN. Identitas
+akun dikaitkan ke `objectGUID` agar pergantian nama AD tidak membuat akun berbeda.
+
 Saat domain dipilih, login lokal Vikunja dan pendaftaran publik dinonaktifkan.
 Akun/data lokal lama tetap tersimpan untuk rollback. API/MCP tetap memerlukan
 token berizin. Login dengan akun AD tidak berarti SSO browser Kerberos/OIDC.
