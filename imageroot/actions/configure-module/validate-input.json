@@ -52,6 +52,10 @@
                 "userPrincipalName"
             ],
             "description": "Directory attribute for Vikunja email; UPN supports AD users lacking mail. Omitted preserves current choice."
+        },
+        "ldap_sync_enabled": {
+            "type": "boolean",
+            "description": "Opt in to create LDAP profiles before first login and refresh every fifteen minutes. New profiles are discoverable by name."
         }
     }
 }

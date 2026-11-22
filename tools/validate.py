@@ -13,7 +13,7 @@ if not bash:
     sys.exit("Bash required: run this check in WSL or a Linux development host.")
 count = {"python": 0, "bash": 0, "json": 0}
 paths = [root / "build-images.sh"]
-for directory in ("imageroot", "tests", "tools"):
+for directory in ("imageroot", "tests", "tools", "containers"):
     paths.extend(p for p in (root / directory).rglob("*") if p.is_file()
                  and "__pycache__" not in p.parts)
 for path in paths:

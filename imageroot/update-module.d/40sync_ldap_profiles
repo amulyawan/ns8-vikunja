@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+exec 1>&2
+configure-ldap-sync

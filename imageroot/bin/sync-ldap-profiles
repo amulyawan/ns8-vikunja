@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Run the pinned native-model companion without exposing directory credentials."""
+import fcntl
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import time
+import urllib.request
+
+dry_run = "--dry-run" in sys.argv[1:]
+if not os.environ.get("LDAP_USER_DOMAIN") or (not dry_run and os.environ.get("LDAP_SYNC_PROFILES") != "true"):
+    sys.exit(0)
+os.umask(0o077)
+with open("ldap-profile-sync.lock", "a") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    # A module restart may return before the application's migrations finish.
+    for attempt in range(60):
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:" + os.environ["TCP_PORT"] + "/api/v2/info", timeout=3) as response:
+                version = json.load(response).get("version", "").lstrip("v")
+            if version != "2.8.0":
+                raise RuntimeError("LDAP companion supports exactly Vikunja 2.8.0")
+            break
+        except (OSError, ValueError):
+            if attempt == 59:
+                raise RuntimeError("Application did not become ready for LDAP provisioning") from None
+            time.sleep(2)
+    command = ["podman", "exec", "--env", "VIKUNJA_LOG_ENABLED=false", "vikunja-app", "/app/vikunja/ns8-ldap-sync"]
+    if not dry_run:
+        command.append("--apply")
+    result = subprocess.run(command, capture_output=True, text=True, timeout=480)
+    summary = None
+    for line in result.stdout.splitlines():
+        try:
+            candidate = json.loads(line)
+            if isinstance(candidate, dict) and "counts" in candidate:
+                summary = candidate
+        except ValueError:
+            pass
+    if summary is None:
+        # Upstream diagnostics may contain directory data. Keep them out of
+        # the journal and API output, including on a failed bind or migration.
+        raise RuntimeError("LDAP provisioning failed before returning aggregate status")
+    summary["timestamp"] = int(time.time())
+    summary["exit_code"] = result.returncode
+    if not dry_run:
+        history = Path("ldap-profile-sync-created.json")
+        previous = json.loads(history.read_text()) if history.exists() else []
+        created = sorted(set(previous + summary.pop("created_ids", [])))
+        temporary = history.with_suffix(".tmp")
+        temporary.write_text(json.dumps(created))
+        temporary.replace(history)
+        status = Path("ldap-profile-sync-status.json")
+        temporary = status.with_suffix(".tmp")
+        temporary.write_text(json.dumps(summary))
+        temporary.replace(status)
+    summary.pop("created_ids", None)
+    print(json.dumps(summary))
+    sys.exit(result.returncode)

@@ -22,6 +22,11 @@ vikunja_version=2.8.0
 # Latest stable database for fresh installs, with patched helper/base packages.
 postgres_image="${repobase}/vikunja-postgres:19.0-ns8.1"
 buildah bud --tag "${postgres_image}" --file containers/postgres/Containerfile containers/postgres
+# Build a version-pinned LDAP companion; the official web image stays unchanged.
+mkdir -p .local/ldap-sync-out
+ldap_builder=$(buildah from --volume "${PWD}/containers/ldap-sync:/integration:ro,Z" --volume "${PWD}/.local/ldap-sync-out:/out:Z" docker.io/library/golang:1.27.4-alpine3.24@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280)
+buildah run "${ldap_builder}" sh -c 'apk add --no-cache bash && bash /integration/build.sh'
+buildah rm "${ldap_builder}"
 # Create a new empty container image
 container=$(buildah from scratch)
 
@@ -41,6 +46,8 @@ buildah run \
 
 # Add imageroot directory to the container image
 buildah add "${container}" imageroot /imageroot
+buildah add "${container}" .local/ldap-sync-out/ns8-ldap-sync /imageroot/bin/ns8-ldap-sync
+buildah add "${container}" .local/ldap-sync-out/licenses /imageroot/share/ldap-sync-licenses
 buildah add "${container}" ui/dist /ui
 # Setup the entrypoint, ask to reserve one TCP port with the label and set a rootless container
 # Select you image(s) with the label org.nethserver.images

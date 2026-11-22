@@ -81,6 +81,14 @@ class DirectoryAuthentication(unittest.TestCase):
         self.assertEqual(config["VIKUNJA_AUTH_LDAP_ATTRIBUTE_ID"], "objectGUID")
         self.assertIn("(userPrincipalName=%[1]s)", config["VIKUNJA_AUTH_LDAP_USERFILTER"])
 
+    def test_provisioning_discoverability_is_opt_in_and_requires_domain(self):
+        ordinary = self.discover("ad.example.org")
+        self.assertNotIn("VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME", ordinary)
+        with patch.dict(os.environ, {"LDAP_SYNC_PROFILES": "true"}):
+            opted_in = self.discover("ad.example.org")
+            self.assertEqual(opted_in["VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME"], "true")
+            self.assertEqual(self.discover(""), {"VIKUNJA_AUTH_LDAP_ENABLED": "false"})
+
     def test_runtime_can_reach_native_proxy_and_loads_generated_auth_last(self):
         pod = (ROOT / "imageroot/systemd/user/vikunja.service").read_text()
         app = (ROOT / "imageroot/systemd/user/vikunja-app.service").read_text()

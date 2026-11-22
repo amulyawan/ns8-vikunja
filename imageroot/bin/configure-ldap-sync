@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Apply the opt-in provisioning policy after the application is available."""
+import os
+import subprocess
+
+enabled = bool(os.environ.get("LDAP_USER_DOMAIN")) and os.environ.get("LDAP_SYNC_PROFILES") == "true"
+if enabled:
+    subprocess.run(["systemctl", "--user", "enable", "--now", "vikunja-ldap-sync.timer"], check=True)
+    # Systemd serializes this initial invocation with any timer invocation.
+    subprocess.run(["systemctl", "--user", "restart", "vikunja-ldap-sync.service"], check=True)
+else:
+    subprocess.run(["systemctl", "--user", "disable", "--now", "vikunja-ldap-sync.timer"], check=True)
+    subprocess.run(["systemctl", "--user", "stop", "vikunja-ldap-sync.service"], check=True)

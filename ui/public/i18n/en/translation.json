@@ -48,7 +48,9 @@
     "instance_configuration": "Configure vikunja",
     "domain_already_used_in_traefik": "Domain already used in traefik",
     "host_pattern": "Must be a valid fully qualified domain name",
-    "host_format": "Must be a valid fully qualified domain name"
+    "host_format": "Must be a valid fully qualified domain name",
+    "ldap_sync_profiles": "Provision LDAP users before their first login",
+    "ldap_sync_help": "Creates profiles for visible, enabled directory users with a valid email, and refreshes every 15 minutes. New profiles can be searched by name. Existing privacy settings are preserved. No passwords or team permissions are copied."
   },
   "about": {
     "title": "About"

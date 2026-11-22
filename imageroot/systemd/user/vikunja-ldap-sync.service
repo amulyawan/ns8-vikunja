@@ -1,0 +1,11 @@
+[Unit]
+Description=Provision Vikunja LDAP profiles before first login
+After=vikunja-app.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=%S/state/environment
+WorkingDirectory=%S/state
+ExecStart=runagent sync-ldap-profiles
+TimeoutStartSec=600
+UMask=0077

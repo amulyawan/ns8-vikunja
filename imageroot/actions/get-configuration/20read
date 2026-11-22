@@ -25,6 +25,7 @@ config["http2https"] = os.getenv("TRAEFIK_HTTP2HTTPS") == "True"
 config["lets_encrypt"] = os.getenv("TRAEFIK_LETS_ENCRYPT") == "True"
 config["user_domain"] = os.getenv("LDAP_USER_DOMAIN", "")
 config["ldap_email_attribute"] = os.getenv("LDAP_EMAIL_ATTRIBUTE", "mail")
+config["ldap_sync_enabled"] = os.getenv("LDAP_SYNC_PROFILES", "false") == "true"
 config["available_user_domains"] = Ldapproxy().get_domains_list()
 config["ip_allowlist"] = json.loads(os.getenv("TRAEFIK_IP_ALLOWLIST", '["127.0.0.1/32"]'))
 if config["host"]:

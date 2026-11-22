@@ -104,7 +104,8 @@ Referensi: [LDAP Vikunja](https://vikunja.io/docs/ldap/),
 Vikunja tidak menyediakan username/password bawaan. Tanpa LDAP, administrator
 membuat akun lokal lewat registrasi yang diizinkan atau CLI. Dengan LDAP,
 pengguna memakai kredensial directory yang sudah ada; profil Vikunja dibuat
-pada login LDAP pertama yang berhasil. Tidak ada sandi aplikasi bersama.
+pada login LDAP pertama yang berhasil, atau lebih awal melalui provisioning
+opsional di bawah. Tidak ada sandi aplikasi bersama.
 
 Admin NS8 mengelola paket, konfigurasi dan backup. Admin Samba mengelola directory.
 Keduanya tidak otomatis menjadi admin seluruh instance Vikunja. Akun pertama juga
@@ -129,9 +130,10 @@ otomatisasi untuk akun berikutnya. Pemeriksaan ini tidak membuat akun uji AD.
 Waktu persis pembuatan direktori fisik Maildir belum dibuktikan melalui uji
 runtime akun baru; jangan menyamakan direktori fisik dengan mailbox logis.
 
-Login LDAP bukan impor seluruh directory ke tabel pengguna Vikunja. Pengguna
-harus berhasil login sekali sebelum dapat dipilih sebagai anggota tim atau
-assignee. Cari username persis, pilih hasil autocomplete, kemudian Add to Team.
+Login LDAP bawaan bukan impor seluruh directory ke tabel pengguna Vikunja.
+Tanpa provisioning opsional, pengguna harus berhasil login sekali sebelum dapat
+dipilih sebagai anggota tim atau assignee. Cari username persis, pilih hasil
+autocomplete, kemudian Add to Team.
 Mengetik nama bebas tanpa memilih hasil akan memunculkan “Please select a user”.
 Pencarian nama tampilan/email mengikuti pilihan discoverability pengguna atau
 hubungan external team; menambah anggota tim tidak membutuhkan panel admin Pro.
@@ -139,3 +141,63 @@ hubungan external team; menambah anggota tim tidak membutuhkan panel admin Pro.
 Referensi: [pembuatan user NS8](https://docs.nethserver.org/docs/administrator-manual/installation/user_domains#create-users-and-groups),
 [alur LDAP Vikunja](https://vikunja.io/docs/ldap/) dan
 [API pencarian pengguna](https://try.vikunja.io/api/v1/docs).
+
+## 7. Provisioning LDAP sebelum login pertama (kandidat RC5)
+
+Fitur ini merupakan tambahan modul NS8, bukan perilaku bawaan Vikunja.
+Image aplikasi web tetap Vikunja resmi 2.8.0. Companion memakai model pembuatan
+user dan identitas LDAP dari source versi yang sama, termasuk pemeriksaan lisensi.
+
+1. Buat backup NS8 untuk instance ini dan pastikan backup benar-benar menghasilkan
+   snapshot. Sediakan kapasitas database untuk user dan Inbox yang akan dibuat.
+2. Pasang kandidat yang sudah lulus build, test, dan scan. Pilih domain NS8 serta
+   atribut email yang benar pada **Settings**. `mail` harus berisi email valid.
+3. Untuk memeriksa rencana sebelum aktivasi, di shell node NS8 jalankan:
+
+   ```bash
+   runagent -m vikunja1 sync-ldap-profiles --dry-run
+   ```
+
+   Ganti `vikunja1` dengan instance aktual. Ini tidak membuat atau mengubah profil;
+   inisialisasi CLI standar tetap bisa menjalankan migrasi/metadata internal.
+   Hasil hanya berisi jumlah `would_create`, `would_update`, `existing`, atau
+   akun yang dilewati. Tidak ada password atau daftar directory dalam output.
+4. Centang **Provision LDAP users before their first login**, lalu Save.
+   Modul menjalankan provisioning pertama dan timer setiap sekitar 15 menit.
+   API setara adalah `ldap_sync_enabled: true` pada `configure-module`.
+5. Periksa status dari node:
+
+   ```bash
+   runagent -m vikunja1 systemctl --user status vikunja-ldap-sync.timer
+   runagent -m vikunja1 cat ldap-profile-sync-status.json
+   ```
+
+6. Di **Team Members**, cari nama/username, klik hasil autocomplete, kemudian
+   **Add to Team**. Pengguna tidak perlu sudah pernah login. Login pengguna tetap
+   memakai kredensial AD masing-masing.
+
+Hanya akun yang terlihat pada domain NS8 dan aktif yang diproses. User tanpa
+email valid atau identitas stabil dilewati; akun lokal dengan username sama tidak
+diambil alih. Pencarian dibatasi 5.000 hasil agar scope tak sengaja terlalu luas
+gagal dengan aman. GUID AD dipakai seperti login native agar tidak membuat
+profil kedua ketika pengguna akhirnya login.
+
+Profil baru memiliki Inbox pribadi, tanpa password lokal, tanpa hak admin dan
+tanpa keanggotaan tim otomatis. Nama profil baru dapat dicari oleh pengguna
+Vikunja yang login; ini adalah dampak privasi yang disetujui lewat checkbox.
+Pilihan discoverability dan status disabled pada profil yang sudah ada dijaga.
+Sinkronisasi hanya memperbarui nama/email dari AD. Tidak menulis ke AD, tidak
+membuat mailbox, tidak menyinkronkan grup, dan tidak menghapus akun yang hilang
+dari directory. Penonaktifan AD menolak login LDAP berikutnya, tetapi fitur ini
+bukan pencabutan sesi aktif; gunakan kontrol sesi jika perlu penonaktifan segera.
+
+Untuk berhenti, hapus centang dan Save. Profil yang sudah dibuat tetap tersedia.
+Manifest ID yang dibuat disimpan privat dalam `ldap-profile-sync-created.json`
+dan ikut backup; jangan unggah file tersebut. Jika perlu rollback sesudah dipakai,
+utamakan menonaktifkan akun yang ditinjau melalui CLI native, bukan menghapus
+data user secara massal. Restore penuh hanya dari snapshot yang sesuai dan
+setelah meninjau perubahan pengguna sejak snapshot.
+
+Companion menambah indeks unik parsial `ns8_ldap_identity_unique` pada identitas
+LDAP untuk menjaga konsistensi dengan login pertama yang berbarengan. Versi
+aplikasi harus tepat 2.8.0; upgrade versi Vikunja harus menguji ulang companion.

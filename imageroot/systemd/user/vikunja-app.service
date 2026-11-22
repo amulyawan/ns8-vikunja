@@ -22,6 +22,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/vikunja-app.pid \
     --cidfile %t/vikunja-app.ctr-id --cgroups=no-conmon \
     --pod-id-file %t/vikunja.pod-id --replace -d --name  vikunja-app \
     --volume vikunja-app:/app/vikunja/files/:Z,U \
+    --volume %S/bin/ns8-ldap-sync:/app/vikunja/ns8-ldap-sync:ro,Z \
     --env-file=%S/state/vikunja-db.env \
     --env-file=%S/state/vikunja.env \
     --env-file=%S/state/smarthost.env \

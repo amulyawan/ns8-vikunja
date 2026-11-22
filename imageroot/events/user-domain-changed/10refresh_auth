@@ -8,3 +8,5 @@ event = json.load(sys.stdin)
 domain = os.environ.get("LDAP_USER_DOMAIN", "")
 if domain and domain in event.get("domains", []):
     subprocess.run(["systemctl", "--user", "try-restart", "vikunja-app.service"], check=True)
+    if os.environ.get("LDAP_SYNC_PROFILES") == "true":
+        subprocess.run(["systemctl", "--user", "start", "--no-block", "vikunja-ldap-sync.service"], check=True)

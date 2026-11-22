@@ -45,6 +45,19 @@ This does not prove that the NS8 module runner or a target host supports both.
 
 ## Remaining supply-chain gates
 
+The optional LDAP profile companion is compiled against the unchanged Vikunja
+2.8.0 core at commit `6e788bf87cebe50e2b8d034b213fcf94ae5449ee`.
+The downloaded source archive is verified against SHA256
+`120642eb6355871bedd1fe149af7e747c4686270d1cffb9d9c173c9b07c59217`.
+Integration source is AGPL-3.0-or-later, commercially usable subject to its source
+and notice obligations. The public repository supplies the integration source
+and reproducible build script; the pinned upstream source is available from
+[Vikunja](https://github.com/go-vikunja/vikunja/tree/6e788bf87cebe50e2b8d034b213fcf94ae5449ee).
+The official Vikunja web executable/image is not patched. Native license checks
+are retained; the companion does not enable Pro features or grant global admin.
+Go and dependency notices are included under `share/ldap-sync-licenses` in the
+module image. The module archive scan includes this static Go executable.
+
 Keep the upstream UI lockfile and immutable install. Review its full dependency
 license report/SBOM before production, including image base packages. Scan both
 the module and runtime service images. Retain security scan failures as blockers,

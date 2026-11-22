@@ -51,6 +51,12 @@
               <cv-select-option value="mail" :selected="ldapEmailAttribute === 'mail'">mail</cv-select-option>
               <cv-select-option value="userPrincipalName" :selected="ldapEmailAttribute === 'userPrincipalName'">userPrincipalName (AD)</cv-select-option>
             </cv-select>
+            <div v-if="userDomain" class="mg-bottom">
+              <cv-checkbox value="ldapSync" v-model="ldapSyncEnabled"
+                :label="$t('settings.ldap_sync_profiles')"
+                :disabled="loading.getConfiguration || loading.configureModule" />
+              <p>{{ $t('settings.ldap_sync_help') }}</p>
+            </div>
             <cv-select :label="$t('settings.access_scope')" v-model="accessMode"
               :disabled="loading.getConfiguration || loading.configureModule" class="mg-bottom">
               <cv-select-option value="restricted" :selected="accessMode === 'restricted'">{{ $t('settings.restricted_access') }}</cv-select-option>
@@ -152,6 +158,7 @@ export default {
       host: "",
       userDomain: "",
       ldapEmailAttribute: "mail",
+      ldapSyncEnabled: false,
       availableUserDomains: [],
       accessMode: "restricted",
       allowedNetworks: "127.0.0.1/32",
@@ -236,6 +243,7 @@ export default {
       this.host = config.host;
       this.userDomain = config.user_domain || "";
       this.ldapEmailAttribute = config.ldap_email_attribute || "mail";
+      this.ldapSyncEnabled = !!config.ldap_sync_enabled;
       this.availableUserDomains = config.available_user_domains || [];
       const networks = config.ip_allowlist || ["127.0.0.1/32"];
       this.accessMode = networks.length ? "restricted" : "public";
@@ -315,6 +323,7 @@ export default {
             host: this.host,
             user_domain: this.userDomain,
             ldap_email_attribute: this.ldapEmailAttribute,
+            ldap_sync_enabled: this.ldapSyncEnabled,
             ip_allowlist: this.accessMode === "public" ? [] : this.allowedNetworks.split(/[,\s]+/).filter(Boolean),
             lets_encrypt: this.isLetsEncryptEnabled,
             http2https: this.isHttpToHttpsEnabled,

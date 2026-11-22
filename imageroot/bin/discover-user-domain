@@ -37,6 +37,10 @@ if domain:
         "VIKUNJA_AUTH_LDAP_ATTRIBUTE_DISPLAYNAME": "displayName",
         "VIKUNJA_AUTH_LDAP_GROUPSYNCENABLED": "false",
     })
+    if os.environ.get("LDAP_SYNC_PROFILES") == "true":
+        # New profiles can be selected by display name before first login.
+        # This default does not overwrite existing users' privacy preferences.
+        settings["VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME"] = "true"
 os.umask(0o077)
 agent.write_envfile("ldap.env", settings)
 os.chmod("ldap.env", 0o600)
