@@ -1,7 +1,7 @@
 # Instalasi uji Vikunja pada NS8 dan pembaruan melalui web UI
 
 Dokumen terpisah dari panduan pembuatan modul. Target kandidat: Vikunja 2.8.0,
-PostgreSQL 19.0, modul `2.8.0-rc.2`. Instalasi baru dan update kandidat pada NS8
+PostgreSQL 19.0, modul `2.8.0-rc.5`. Instalasi baru dan update kandidat pada NS8
 aktual lulus pada 22 November 2026. Nilai token asli dan informasi infrastruktur
 pemilik berada dalam dokumentasi lokal privat, pada bagian token step-by-step.
 
@@ -55,7 +55,7 @@ printf '%s' "$registry_token" | podman login --authfile "$authfile" \
   --username amulyawan --password-stdin ghcr.io/amulyawan/ns8-vikunja-build
 unset registry_token
 chmod "$authmode" "$authfile"
-podman pull ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.2
+podman pull ghcr.io/amulyawan/ns8-vikunja-build/vikunja:2.8.0-rc.5
 ```
 
 Token diketik pada prompt tersembunyi, bukan ditempel sebagai perintah. Jika
@@ -289,3 +289,15 @@ anggota tim. RC4 telah dipasang dan pengujian login AD oleh pemilik berhasil.
 HTTPS semua IP diterapkan hanya setelah izin pemilik dan verifikasi LDAP.
 Akun lokal sintetis dinonaktifkan melalui CLI; email keluar tetap dinonaktifkan.
 Nilai host/domain dan perubahan directory yang disetujui berada di laporan privat.
+
+## 12. Sinkronisasi profil, teams dan Privacy pada RC5
+
+RC5 sudah diuji melalui update NS8 aktual. Backup baru dibuat sebelum update.
+Companion membuat profil LDAP sebelum login dan memetakan group utama/bertingkat
+ke external teams. Kedua opsi pencarian nama dan email lengkap wajib aktif.
+[Langkah aktivasi dan rollback](LDAP-DAN-AKSES-NS8-ID.md) menjelaskan timer,
+manifest ID privat, kebijakan Privacy, dan batas pengelolaan project.
+
+Restore native end-to-end sebelumnya diuji pada RC2. Restore ulang RC5 sesudah
+penambahan data LDAP/team belum dijalankan; jangan menganggap uji sebelumnya
+sebagai bukti semua konfigurasi LDAP RC5 sudah diuji restore.

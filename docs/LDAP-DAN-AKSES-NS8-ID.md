@@ -142,7 +142,7 @@ Referensi: [pembuatan user NS8](https://docs.nethserver.org/docs/administrator-m
 [alur LDAP Vikunja](https://vikunja.io/docs/ldap/) dan
 [API pencarian pengguna](https://try.vikunja.io/api/v1/docs).
 
-## 7. Sinkronisasi pengguna dan group LDAP (kandidat RC5)
+## 7. Sinkronisasi pengguna dan group LDAP (RC5)
 
 Fitur ini merupakan tambahan modul NS8, bukan perilaku bawaan Vikunja.
 Base container memakai image resmi 2.8.0. Executable web dibangun ulang dari

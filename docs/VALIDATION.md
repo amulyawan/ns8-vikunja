@@ -174,3 +174,40 @@ The user-domain/attribute select display was found to need explicit selected
 option bindings for asynchronously loaded settings; the source fix is included
 in the next image build. No claim of pre-login LDAP bulk provisioning is made
 for RC4.
+
+## RC5 pre-login provisioning, directory teams and mandatory discovery
+
+[Run 44975299796](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44975299796)
+built, tested, scanned and privately published `2.8.0-rc.5` from source `8aa2320`.
+Module digest: `sha256:5650703012f93540c2238110f603a7880fc0344fb7f73fdd21b9aa3a8c221332`.
+The source suite passed 31 tests; pinned native-model tests passed, including
+identity reuse, disabled profiles, primary/nested membership, renames, revocation
+and preservation of manual teams/projects. The rebuilt backend/embedded frontend
+also passed a disposable local SQLite policy smoke. CI exercised PostgreSQL 19
+and proved a direct API PUT with both discovery fields false leaves both true.
+The first policy CI attempt stopped before scans/publication because its test
+incorrectly used POST; the test was corrected to the documented API v2 PUT.
+Earlier narrower workflows were cancelled before publication when scope expanded.
+
+Actual NS8 update and dry-run passed. Provisioning created the planned profiles
+without local passwords or admin flags. All eligible LDAP identities and primary/
+nested memberships exactly matched an independently read directory snapshot.
+A repeated synchronization did not duplicate users, projects, teams or membership.
+The timer is active/enabled; secret files, existing data and synthetic attachment
+SHA-256 were preserved. Original application versions/digests were unchanged.
+Local test accounts remain disabled, registration remains closed, and instance
+SMTP remains disabled. Public trusted HTTPS/API health passed.
+
+The authenticated browser visibly showed the automatically created LDAP teams
+and both Privacy checkboxes checked and disabled, with the organization-policy
+notice. User-domain selection now displays correctly. The email-attribute selector
+still renders blank despite the backend retaining mail; this UI issue is recorded
+for the next candidate, so no UI-setting round-trip is claimed for that selector.
+Private screenshots and counts remain owner-local.
+
+RC5 uses the official container base but overlays a source-built web executable
+with the documented policy patch. It does not claim an unchanged official web
+binary. Current directory synchronization is read-only. Authorized AD membership
+changes from Vikunja UI are the next, separate scope; projects remain independent.
+The prior native restore test was RC2; a new full RC5 LDAP/team restore has not
+been run. No real import job, SMTP delivery or legacy 1.1.0 migration is claimed.
