@@ -229,3 +229,47 @@ Langkah berikut sebelum pemakaian tim: tetapkan domain/TLS dan akses yang sesuai
 uji SMTP nyata ke alamat uji pemilik, tetapkan jadwal backup operasional, lalu
 jalankan penerimaan penggunaan tim. Pengujian ini tidak membuka route staging
 ke publik atau mengubah kebijakan email seluruh cluster.
+
+## 10. Akses IP privat/publik dan login domain NS8 (kandidat RC3)
+
+Panel Settings kandidat RC3 menyediakan **Network access**:
+
+- **Only selected IP addresses or networks**: isi IPv4, IPv6 atau CIDR, dipisahkan
+  koma. Contoh: `192.0.2.0/24, 2001:db8::/64`. Ganti jaringan dokumentasi ini
+  dengan jaringan klien yang benar. Backend tetap loopback.
+- **All IP addresses**: menghapus allowlist pada route aplikasi ini saja. HTTPS
+  dan autentikasi aplikasi tetap digunakan. Image GHCR tetap privat.
+
+Hostname privat maupun publik dapat dipakai asalkan DNS dan sertifikatnya sesuai.
+Mode semua IP tidak mengubah DNS/firewall/NAT eksternal atau membuka PostgreSQL.
+Mengganti hostname saja mempertahankan batas akses lama. HTTP 403 dengan backend
+sehat dapat berasal dari allowlist lama; periksa Network access. Mode dan CIDR
+tersimpan dalam environment NS8, dipulihkan pada restore, dan dibaca dari route
+aktual saat panel ditampilkan.
+
+Pilih **User domain** yang sudah dikonfigurasi pada Domains and users. Modul
+mengikat domain melalui role `cluster:accountconsumer`, mengambil konfigurasi
+melalui `agent.ldapproxy`, dan menggunakan LDAP native Vikunja. Kredensial bind
+tidak ditampilkan di panel atau dimasukkan Git. Parameter sensitif dihasilkan
+ulang pada start dalam `ldap.env` mode 0600, dengan penyegaran saat domain berubah.
+
+NS8 Ldapproxy mendengarkan pada host loopback dan mengurus TLS ke directory.
+Pod rootless memakai slirp4netns dengan host-loopback sehingga Vikunja dapat
+mengakses proxy internal tersebut; port LDAP tidak dibuka ke jaringan publik.
+
+Untuk AD, username memakai `sAMAccountName`, email memakai `mail`, dan nama
+tampilan memakai `displayName`. Akun tersembunyi dan akun AD disabled keluar dari
+filter. Pengguna harus mempunyai email valid. Directory memverifikasi sandi
+pengguna; ini bukan akun admin NS8. Sinkronisasi group/team tidak otomatis aktif.
+
+Saat domain dipilih, login lokal Vikunja dan pendaftaran publik dinonaktifkan.
+Akun/data lokal lama tetap tersimpan untuk rollback. API/MCP tetap memerlukan
+token berizin. Login dengan akun AD tidak berarti SSO browser Kerberos/OIDC.
+
+Sebelum membuka semua IP, verifikasi bind dan pencarian LDAP dari pod aplikasi,
+health, `/api/v2/info`, serta penolakan akun lokal dan username AD yang tidak ada.
+Uji login AD yang berhasil dilakukan pemilik langsung pada HTTPS; jangan mengirim
+sandi ke chat. Bedakan hasil runtime aktual dari unit test dan CI.
+
+Referensi: [LDAP Vikunja](https://vikunja.io/docs/ldap/) dan
+[user domains NS8](https://nethserver.github.io/ns8-core/core/user_domains/).

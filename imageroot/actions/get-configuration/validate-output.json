@@ -31,6 +31,23 @@
             "type": "boolean",
             "title": "HTTP to HTTPS redirection",
             "description": "Redirect all the HTTP requests to HTTPS"
+        },
+        "user_domain": {
+            "type": "string"
+        },
+        "available_user_domains": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "ip_allowlist": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            },
+            "description": "Allowed client IPs/CIDRs; empty allows all IPs. Omitted preserves current policy."
         }
     }
 }

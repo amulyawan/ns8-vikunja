@@ -12,6 +12,15 @@
         "validation_error": "Balioztatze-errorea"
     },
     "settings": {
+        "user_domain": "User domain",
+        "local_accounts": "Local Vikunja accounts",
+        "user_domain_help": "Selecting an NS8 domain uses its LDAP accounts and disables local login and public registration. Users need an email address in the directory.",
+        "user_domain_unavailable": "The selected NS8 user domain is unavailable.",
+        "access_scope": "Network access",
+        "restricted_access": "Only selected IP addresses or networks",
+        "public_access": "All IP addresses (HTTPS and application login)",
+        "allowed_networks": "Allowed IP addresses or CIDRs, separated by commas",
+        "invalid_allowed_networks": "Enter valid IPv4/IPv6 addresses or CIDRs.",
         "test_field": "Proba-eremua",
         "configure_instance": "{instance} konfiguratu",
         "save": "Gorde",

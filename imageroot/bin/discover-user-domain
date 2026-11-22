@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+"""Refresh native NS8 LDAP configuration without logging bind credentials."""
+import os
+import agent
+from agent.ldapproxy import Ldapproxy
+
+domain = os.environ.get("LDAP_USER_DOMAIN", "")
+settings = {"VIKUNJA_AUTH_LDAP_ENABLED": "false"}
+if domain:
+    proxy = Ldapproxy()
+    connection = proxy.get_domain(domain)
+    if not connection or connection["host"] != "127.0.0.1":
+        raise RuntimeError("Configured NS8 user domain is unavailable")
+    schema = connection["schema"]
+    if schema not in ("ad", "rfc2307"):
+        raise RuntimeError("Unsupported NS8 user domain schema")
+    username = "sAMAccountName" if schema == "ad" else "uid"
+    account = "(&(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))" if schema == "ad" else "(objectClass=posixAccount)"
+    visible = proxy.get_ldap_users_search_filter_clause(domain)
+    settings.update({
+        "VIKUNJA_AUTH_LDAP_ENABLED": "true",
+        "VIKUNJA_AUTH_LOCAL_ENABLED": "false",
+        "VIKUNJA_SERVICE_ENABLEREGISTRATION": "false",
+        # NS8's host-loopback L4 proxy provides upstream LDAP TLS. slirp's
+        # special gateway reaches only that existing local proxy listener.
+        "VIKUNJA_AUTH_LDAP_HOST": "10.0.2.2",
+        "VIKUNJA_AUTH_LDAP_PORT": str(connection["port"]),
+        "VIKUNJA_AUTH_LDAP_USETLS": "false",
+        "VIKUNJA_AUTH_LDAP_VERIFYTLS": "true",
+        "VIKUNJA_AUTH_LDAP_BASEDN": connection["base_dn"],
+        "VIKUNJA_AUTH_LDAP_BINDDN": connection["bind_dn"],
+        "VIKUNJA_AUTH_LDAP_BINDPASSWORD": connection["bind_password"],
+        "VIKUNJA_AUTH_LDAP_USERFILTER": f"(&{account}{visible}({username}=%[1]s))",
+        "VIKUNJA_AUTH_LDAP_ATTRIBUTE_USERNAME": username,
+        "VIKUNJA_AUTH_LDAP_ATTRIBUTE_EMAIL": "mail",
+        "VIKUNJA_AUTH_LDAP_ATTRIBUTE_DISPLAYNAME": "displayName",
+        "VIKUNJA_AUTH_LDAP_GROUPSYNCENABLED": "false",
+    })
+os.umask(0o077)
+agent.write_envfile("ldap.env", settings)
+os.chmod("ldap.env", 0o600)

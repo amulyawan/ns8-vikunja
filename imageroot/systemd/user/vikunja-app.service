@@ -17,6 +17,7 @@ TimeoutStopSec=70
 ExecStartPre=/bin/mkdir -p config
 ExecStartPre=/bin/rm -f %t/vikunja-app.pid %t/vikunja-app.ctr-id
 ExecStartPre=runagent discover-smarthost
+ExecStartPre=runagent discover-user-domain
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/vikunja-app.pid \
     --cidfile %t/vikunja-app.ctr-id --cgroups=no-conmon \
     --pod-id-file %t/vikunja.pod-id --replace -d --name  vikunja-app \
@@ -24,6 +25,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/vikunja-app.pid \
     --env-file=%S/state/vikunja-db.env \
     --env-file=%S/state/vikunja.env \
     --env-file=%S/state/smarthost.env \
+    --env-file=%S/state/ldap.env \
     ${VIKUNJA_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/vikunja-app.ctr-id -t 10
 ExecReload=/usr/bin/podman kill -s HUP vikunja-app

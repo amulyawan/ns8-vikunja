@@ -32,6 +32,18 @@
             "type": "boolean",
             "title": "HTTP to HTTPS redirection",
             "description": "Redirect all the HTTP requests to HTTPS"
+        },
+        "user_domain": {
+            "type": "string",
+            "description": "NS8 user domain; empty enables local accounts. Omitted preserves existing selection."
+        },
+        "ip_allowlist": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            },
+            "description": "Allowed client IPs/CIDRs; empty allows all IPs. Omitted preserves current policy."
         }
     }
 }

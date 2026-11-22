@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+import agent
+
+request = json.load(sys.stdin)
+domain = request.get("user_domain", os.environ.get("LDAP_USER_DOMAIN", ""))
+agent.bind_user_domains([domain] if domain else [], check=True)
+agent.set_env("LDAP_USER_DOMAIN", domain)

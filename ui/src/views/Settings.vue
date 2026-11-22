@@ -33,6 +33,28 @@
               ref="host"
             >
             </cv-text-input>
+            <cv-select
+              :label="$t('settings.user_domain')"
+              v-model="userDomain"
+              :disabled="loading.getConfiguration || loading.configureModule"
+              :invalid-message="error.user_domain"
+              class="mg-bottom"
+            >
+              <cv-select-option value="">{{ $t('settings.local_accounts') }}</cv-select-option>
+              <cv-select-option v-for="domain in availableUserDomains" :key="domain" :value="domain">
+                {{ domain }}
+              </cv-select-option>
+            </cv-select>
+            <p class="mg-bottom">{{ $t('settings.user_domain_help') }}</p>
+            <cv-select :label="$t('settings.access_scope')" v-model="accessMode"
+              :disabled="loading.getConfiguration || loading.configureModule" class="mg-bottom">
+              <cv-select-option value="restricted">{{ $t('settings.restricted_access') }}</cv-select-option>
+              <cv-select-option value="public">{{ $t('settings.public_access') }}</cv-select-option>
+            </cv-select>
+            <cv-text-input v-if="accessMode === 'restricted'" v-model.trim="allowedNetworks"
+              :label="$t('settings.allowed_networks')" placeholder="192.0.2.0/24, 2001:db8::/64"
+              :invalid-message="error.ip_allowlist" class="mg-bottom"
+              :disabled="loading.getConfiguration || loading.configureModule" />
             <cv-toggle
               value="letsEncrypt"
               :label="$t('settings.lets_encrypt')"
@@ -123,6 +145,10 @@ export default {
       },
       urlCheckInterval: null,
       host: "",
+      userDomain: "",
+      availableUserDomains: [],
+      accessMode: "restricted",
+      allowedNetworks: "127.0.0.1/32",
       isLetsEncryptEnabled: false,
       isHttpToHttpsEnabled: true,
       loading: {
@@ -133,6 +159,8 @@ export default {
         getConfiguration: "",
         configureModule: "",
         host: "",
+        user_domain: "",
+        ip_allowlist: "",
         lets_encrypt: "",
         http2https: "",
       },
@@ -200,6 +228,11 @@ export default {
     getConfigurationCompleted(taskContext, taskResult) {
       const config = taskResult.output;
       this.host = config.host;
+      this.userDomain = config.user_domain || "";
+      this.availableUserDomains = config.available_user_domains || [];
+      const networks = config.ip_allowlist || ["127.0.0.1/32"];
+      this.accessMode = networks.length ? "restricted" : "public";
+      this.allowedNetworks = networks.join(", ");
       this.isLetsEncryptEnabled = config.lets_encrypt;
       this.isHttpToHttpsEnabled = config.http2https;
 
@@ -216,6 +249,10 @@ export default {
         if (isValidationOk) {
           this.focusElement("host");
         }
+        isValidationOk = false;
+      }
+      if (this.accessMode === "restricted" && !this.allowedNetworks.trim()) {
+        this.error.ip_allowlist = this.$t("common.required");
         isValidationOk = false;
       }
       return isValidationOk;
@@ -269,6 +306,8 @@ export default {
           action: taskAction,
           data: {
             host: this.host,
+            user_domain: this.userDomain,
+            ip_allowlist: this.accessMode === "public" ? [] : this.allowedNetworks.split(/[,\s]+/).filter(Boolean),
             lets_encrypt: this.isLetsEncryptEnabled,
             http2https: this.isHttpToHttpsEnabled,
           },

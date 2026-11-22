@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+import ipaddress
+import json
+import sys
+import agent
+
+request = json.load(sys.stdin)
+try:
+    for entry in request.get("ip_allowlist", []):
+        ipaddress.ip_network(entry, strict=False)
+except ValueError:
+    agent.set_status("validation-failed")
+    json.dump([{"field": "ip_allowlist", "parameter": "ip_allowlist",
+                "error": "invalid_allowed_networks"}], sys.stdout)
+    sys.exit(2)
