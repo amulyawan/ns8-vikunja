@@ -6,7 +6,7 @@ Target: Vikunja 2.8.0 in an NS8 module. This is a development candidate.
 
 | Gate | Required evidence | Status |
 | --- | --- | --- |
-| Source checks | `python3 tools/validate.py` and clean diff | 17 tests cover module, PostgreSQL major guard and private-registry policies; see current CI result |
+| Source checks | `python3 tools/validate.py` and clean diff | 30 tests cover module, PostgreSQL major guard and private-registry policies; see current CI result |
 | NS8 settings frontend | Immutable Yarn install and production build | Passed locally on Windows Node 24.17.0 and in Linux Node 26.13.0 image build (RC2); inherited peer/deprecation/bundle-size warnings remain |
 | Package build | Successful Buildah module build; image labels contain Vikunja 2.8.0 | Passed on private Linux runner, current RC2 run 44963956861 |
 | Container scans | Trivy output for module **and service images** | Module, Vikunja and patched PostgreSQL 19 all passed HIGH/CRITICAL gate, current RC2 run 44963956861 |
@@ -139,3 +139,38 @@ attachment checksum, database credentials and secret survived the update.
 This accepts the tested fresh-install and candidate-update scope. It does not
 claim legacy 1.1.0 data migration, production TLS/DNS, actual mail delivery,
 comments/sharing flows, node reboot or all-severity vulnerability freedom.
+
+
+## RC4 network policy and LDAP configuration — 22 November 2026
+
+[Run 44969884340](https://github.com/amulyawan/ns8-vikunja-build/actions/runs/44969884340)
+built, scanned and privately published `2.8.0-rc.4`. Source suite: 30 tests.
+The preceding RC3 run initially exposed a PostgreSQL startup-probe race: the
+Unix-socket temporary init server accepted pg_isready before shutting down.
+The probe now waits for TCP readiness; the corrected publication gates passed.
+
+Actual NS8 update to RC4 passed. User domain discovery/binding, native LDAP
+bind/search from the pod network, HTTP 200 through trusted HTTPS and API health
+passed. The owner confirmed successful login with their own AD credentials;
+no end-user password was collected. Local synthetic accounts were disabled via
+the supported CLI and now fail login with HTTP 412/code 1020. A nonexistent AD
+user is rejected with 403 and public registration with 404. Original DB secret
+files and attachment SHA-256 were preserved.
+
+The instance's public access was explicitly owner-authorized. No LDAP, database,
+or other application route was exposed. A separate owner-approved, backed-up
+mail-attribute reconciliation used the native Samba partial-update API; sensitive
+user inventories and its before/after evidence remain private. Unchanged group,
+identity, account status and password-change timestamps were verified.
+
+The import settings page rendered successfully in the authenticated browser
+after the update restart. A transient Bad Gateway report coincided with the
+restart; sustained health and frontend requests returned 200 afterward. An actual
+import file/job has not been submitted. Team user lookup requires an existing
+Vikunja profile; LDAP login creates it lazily. Read-only source/runtime checks
+for new NS8 users are documented in LDAP-DAN-AKSES-NS8-ID.md.
+
+The user-domain/attribute select display was found to need explicit selected
+option bindings for asynchronously loaded settings; the source fix is included
+in the next image build. No claim of pre-login LDAP bulk provisioning is made
+for RC4.

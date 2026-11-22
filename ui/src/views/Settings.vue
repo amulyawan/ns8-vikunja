@@ -40,21 +40,21 @@
               :invalid-message="error.user_domain"
               class="mg-bottom"
             >
-              <cv-select-option value="">{{ $t('settings.local_accounts') }}</cv-select-option>
-              <cv-select-option v-for="domain in availableUserDomains" :key="domain" :value="domain">
+              <cv-select-option value="" :selected="!userDomain">{{ $t('settings.local_accounts') }}</cv-select-option>
+              <cv-select-option v-for="domain in availableUserDomains" :key="domain" :value="domain" :selected="domain === userDomain">
                 {{ domain }}
               </cv-select-option>
             </cv-select>
             <p class="mg-bottom">{{ $t('settings.user_domain_help') }}</p>
             <cv-select v-if="userDomain" :label="$t('settings.ldap_email_attribute')" v-model="ldapEmailAttribute"
               :disabled="loading.getConfiguration || loading.configureModule" class="mg-bottom">
-              <cv-select-option value="mail">mail</cv-select-option>
-              <cv-select-option value="userPrincipalName">userPrincipalName (AD)</cv-select-option>
+              <cv-select-option value="mail" :selected="ldapEmailAttribute === 'mail'">mail</cv-select-option>
+              <cv-select-option value="userPrincipalName" :selected="ldapEmailAttribute === 'userPrincipalName'">userPrincipalName (AD)</cv-select-option>
             </cv-select>
             <cv-select :label="$t('settings.access_scope')" v-model="accessMode"
               :disabled="loading.getConfiguration || loading.configureModule" class="mg-bottom">
-              <cv-select-option value="restricted">{{ $t('settings.restricted_access') }}</cv-select-option>
-              <cv-select-option value="public">{{ $t('settings.public_access') }}</cv-select-option>
+              <cv-select-option value="restricted" :selected="accessMode === 'restricted'">{{ $t('settings.restricted_access') }}</cv-select-option>
+              <cv-select-option value="public" :selected="accessMode === 'public'">{{ $t('settings.public_access') }}</cv-select-option>
             </cv-select>
             <cv-text-input v-if="accessMode === 'restricted'" v-model.trim="allowedNetworks"
               :label="$t('settings.allowed_networks')" placeholder="192.0.2.0/24, 2001:db8::/64"

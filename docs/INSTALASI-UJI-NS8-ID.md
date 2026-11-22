@@ -279,3 +279,13 @@ sandi ke chat. Bedakan hasil runtime aktual dari unit test dan CI.
 
 Referensi: [LDAP Vikunja](https://vikunja.io/docs/ldap/) dan
 [user domains NS8](https://nethserver.github.io/ns8-core/core/user_domains/).
+
+
+## 11. Konfigurasi LDAP, akses publik dan pemeriksaan akun
+
+Lihat [panduan LDAP dan akses jaringan](LDAP-DAN-AKSES-NS8-ID.md) untuk mode
+IP/CIDR, perbedaan mailbox dengan atribut mail, akun pertama/admin, dan pencarian
+anggota tim. RC4 telah dipasang dan pengujian login AD oleh pemilik berhasil.
+HTTPS semua IP diterapkan hanya setelah izin pemilik dan verifikasi LDAP.
+Akun lokal sintetis dinonaktifkan melalui CLI; email keluar tetap dinonaktifkan.
+Nilai host/domain dan perubahan directory yang disetujui berada di laporan privat.

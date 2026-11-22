@@ -27,10 +27,10 @@
     "screenshots": [],
     "versions": [
       {
-        "tag": "2.8.0-rc.2",
+        "tag": "2.8.0-rc.4",
         "testing": true,
         "labels": {
-          "org.nethserver.authorizations": "traefik@node:routeadm",
+          "org.nethserver.authorizations": "traefik@node:routeadm cluster:accountconsumer",
           "org.nethserver.images": "ghcr.io/amulyawan/ns8-vikunja-build/vikunja-postgres:19.0-ns8.1 docker.io/vikunja/vikunja:2.8.0",
           "org.nethserver.min-core": "3.0.0",
           "org.nethserver.rootfull": "0",
